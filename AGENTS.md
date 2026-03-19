@@ -1,33 +1,30 @@
 # AGENTS.md
 
-## Project Overview
-- 项目名称：`Team Knowledge Copilot Workbench`
-- 目标：构建一个面向企业团队的 AI 知识工作台，重点练习前端主导的 AI 落地能力，并沉淀为作品集项目。
+## Purpose
+- 本文件用于说明 `Codex`、其他协作代理或自动化工具在本仓库中的工作方式。
+- 本文件不是项目 README，也不是变更流水账。
+- 代码与文档的历史变更统一以 Git 提交记录为准。
 
-## Preferred Stack
-- 前端：`Next.js App Router + React + TypeScript`
-- UI：`shadcn/ui + Tailwind CSS`
-- 前端数据层：`TanStack Query`
-- 表单与校验：`react-hook-form + zod`
-- AI：阿里云百炼；Node.js 侧优先通过兼容接口接入
-- 数据库：`PostgreSQL`
-- 向量检索：`pgvector`
-- 对象存储：阿里云 `OSS`
-- 缓存与任务：`Redis`，需要时补 `BullMQ`
+## Source Of Truth
+- 项目介绍、技术栈说明、开发入口放在 `README.md`。
+- 功能规划、阶段目标、接口与实体设计放在 `PLAN.md`。
+- 项目内 Codex 规则统一维护在 `.codex/rules/`。
 
-## Product Priorities
-- 首版优先实现文档导入、RAG 问答、引用展示、历史会话。
-- 产品目标是练习 AI 应用工程化能力，不优先追求复杂商业化能力。
-- 方案尽量贴近国内常见技术栈，避免依赖海外一体化 BaaS 作为核心后端。
+## Agent Working Rules
+- 开始修改前，先阅读 `README.md`、`PLAN.md` 和 `.codex/rules/` 中与当前任务相关的规则。
+- 默认遵循当前项目技术路线：`Next.js App Router + React + TypeScript + shadcn/ui + Tailwind CSS + TanStack Query + react-hook-form + zod + PostgreSQL + pgvector + OSS + Redis + 阿里云百炼`。
+- 默认使用 `Next.js Route Handlers` 提供接口；如无明确需要，不额外引入独立后端。
+- 聊天消息结构优先按 `parts` 设计。
+- 知识库问答必须支持引用来源；未命中时必须明确拒答，不能伪造依据。
+- 新增依赖前先判断是否直接服务当前阶段目标，避免过早堆栈。
 
-## Engineering Guidelines
-- 默认使用 `Next.js` Route Handlers 提供接口，后续如复杂度升高再拆分独立后端。
-- 聊天消息结构优先按多段 `parts` 设计，而不是只用单一字符串。
-- 回答必须支持引用来源；未命中知识库时必须明确拒答，不能伪造依据。
-- 长会话、流式 Markdown、工具调用状态是前端实现重点，相关状态流转要显式设计。
-- 新增依赖前优先判断是否直接服务于当前阶段目标，避免过早堆栈。
+## Documentation Rules
+- 修改技术路线、关键接口、核心实体、阶段目标时，同步更新 `PLAN.md`。
+- 修改项目对外介绍、开发方式、文档入口时，同步更新 `README.md`。
+- 修改编码规范、架构规则、提交规范时，同步更新 `.codex/rules/`。
+- 所有文档默认保持 `UTF-8` 编码。
 
-## Working Rules
-- 修改计划或技术路线时，同步更新 `PLAN.md`。
-- 优先保持文档使用 UTF-8 编码。
-- 任何会影响技术路线的改动，应优先符合“国内常用栈 + 阿里百炼接入”这一约束。
+## Git Rules
+- 提交信息统一使用中文。
+- 一次提交只解决一类问题，不把功能、重构、格式化混在同一个提交里。
+- 不在 `AGENTS.md` 中手工记录每次修改内容，修改记录由 Git 管理。
