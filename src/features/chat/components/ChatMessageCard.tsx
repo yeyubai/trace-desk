@@ -2,7 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { MessageSquareQuote, Sparkles } from "lucide-react";
+import { MessageSquareQuote, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { ChatMessage } from "@/features/chat/types/chat";
 import { cn } from "@/lib/cn";
@@ -11,11 +11,15 @@ import { formatTimestamp } from "@/lib/formatters";
 type ChatMessageCardProps = {
   message: ChatMessage;
   onUseFollowup?: (value: string) => void;
+  onRateMessage?: (messageId: string, rating: "thumbs_up" | "thumbs_down") => void;
+  selectedRating?: "thumbs_up" | "thumbs_down" | null;
 };
 
 export function ChatMessageCard({
   message,
   onUseFollowup,
+  onRateMessage,
+  selectedRating = null,
 }: ChatMessageCardProps) {
   const isAssistant = message.role === "assistant";
 
@@ -24,8 +28,8 @@ export function ChatMessageCard({
       className={cn(
         "rounded-[1.6rem] border p-4 sm:p-5",
         isAssistant
-          ? "border-line bg-white/84"
-          : "border-accent/25 bg-accent text-white shadow-[0_18px_40px_rgba(13,124,120,0.18)]",
+          ? "border-line bg-panel-strong"
+          : "border-accent/25 bg-accent text-white shadow-[0_18px_40px_rgba(var(--accent-rgb),0.18)]",
       )}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -134,6 +138,37 @@ export function ChatMessageCard({
           );
         })}
       </div>
+
+      {isAssistant ? (
+        <div className="mt-4 flex items-center gap-2 border-t border-line pt-4">
+          <button
+            type="button"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs transition-colors",
+              selectedRating === "thumbs_up"
+                ? "border-accent bg-accent-soft text-accent-strong"
+                : "border-line bg-white/80 text-muted hover:border-accent hover:text-foreground",
+            )}
+            onClick={() => onRateMessage?.(message.id, "thumbs_up")}
+          >
+            <ThumbsUp className="size-3.5" />
+            有帮助
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs transition-colors",
+              selectedRating === "thumbs_down"
+                ? "border-warning bg-warning-soft text-warning"
+                : "border-line bg-white/80 text-muted hover:border-warning hover:text-foreground",
+            )}
+            onClick={() => onRateMessage?.(message.id, "thumbs_down")}
+          >
+            <ThumbsDown className="size-3.5" />
+            仍需调整
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }

@@ -39,7 +39,7 @@ export function SessionRail({
                   "w-full rounded-[1.4rem] border p-4 text-left transition-transform hover:-translate-y-0.5",
                   isActive
                     ? "border-accent bg-accent-soft"
-                    : "border-line bg-white/70 hover:border-accent/40",
+                    : "border-line bg-panel-strong hover:border-accent/40",
                 )}
                 onClick={() => onSelectSession(session.id)}
               >

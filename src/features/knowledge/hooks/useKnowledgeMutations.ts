@@ -34,3 +34,13 @@ export function useUploadSourceMutation() {
     },
   });
 }
+
+export function useKnowledgeMutations() {
+  const importUrlMutation = useImportUrlMutation();
+  const uploadSourceMutation = useUploadSourceMutation();
+
+  return {
+    importUrlMutation,
+    uploadSourceMutation,
+  };
+}

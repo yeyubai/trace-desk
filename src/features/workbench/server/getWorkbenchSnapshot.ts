@@ -2,6 +2,7 @@ import { formatCompactNumber } from "@/lib/formatters";
 import { getRuntimeOverview } from "@/features/runtime/server/get-runtime-overview";
 import {
   getKnowledgeBaseOverview,
+  listResponseFeedback,
   listChatSessions,
   listSourceDocumentsByKnowledgeBaseId,
 } from "@/services/db/mock-workbench-store";
@@ -11,6 +12,13 @@ export function getWorkbenchSnapshot(): WorkbenchSnapshot {
   const knowledgeBase = getKnowledgeBaseOverview();
   const sessions = listChatSessions();
   const sources = listSourceDocumentsByKnowledgeBaseId(knowledgeBase.id);
+  const feedbackEntries = listResponseFeedback();
+  const positive = feedbackEntries.filter(
+    (entry) => entry.rating === "thumbs_up",
+  ).length;
+  const negative = feedbackEntries.filter(
+    (entry) => entry.rating === "thumbs_down",
+  ).length;
 
   return {
     knowledgeBase,
@@ -43,5 +51,10 @@ export function getWorkbenchSnapshot(): WorkbenchSnapshot {
       "如何表达未命中时的明确拒答？",
     ],
     runtime: getRuntimeOverview(),
+    feedbackSummary: {
+      total: feedbackEntries.length,
+      positive,
+      negative,
+    },
   };
 }

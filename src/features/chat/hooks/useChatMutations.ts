@@ -17,3 +17,18 @@ export function useSendChatMessageMutation() {
     },
   });
 }
+
+export function useFeedbackMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      messageId: string;
+      rating: "thumbs_up" | "thumbs_down";
+      note?: string;
+    }) => postJson<{ ok: true }, typeof input>("/api/feedback", input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workbenchQueryKey });
+    },
+  });
+}

@@ -36,7 +36,7 @@ export function KnowledgeOverviewPanel({
           {signals.map((signal) => (
             <div
               key={signal.id}
-              className="rounded-[1.35rem] border border-line bg-white/76 p-4"
+              className="rounded-[1.35rem] border border-line bg-panel-strong p-4"
             >
               <p className="section-kicker">{signal.label}</p>
               <div className="mt-2 flex items-center gap-3">
@@ -49,7 +49,7 @@ export function KnowledgeOverviewPanel({
           ))}
         </div>
 
-        <div className="grid gap-3 rounded-[1.4rem] border border-line bg-white/72 p-4">
+        <div className="grid gap-3 rounded-[1.4rem] border border-line bg-panel-strong p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Database className="size-4 text-accent-strong" />
             当前情况
@@ -72,7 +72,7 @@ export function KnowledgeOverviewPanel({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-[1.4rem] border border-line bg-white/72 p-4">
+        <div className="space-y-3 rounded-[1.4rem] border border-line bg-panel-strong p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Radar className="size-4 text-accent-strong" />
             关注内容

@@ -5,6 +5,7 @@ import { ArrowRight, CircleDot, Sparkles, TimerReset } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useFeedbackMutation } from "@/features/chat/hooks/useChatMutations";
 import type { ChatSession } from "@/features/chat/types/chat";
 import type { SendChatMessageFormValues } from "@/features/chat/schemas/send-message";
 import { ChatMessageCard } from "@/features/chat/components/ChatMessageCard";
@@ -26,6 +27,8 @@ export function ChatWorkspace({
   onSendMessage,
 }: ChatWorkspaceProps) {
   const [draftFromFollowup, setDraftFromFollowup] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<Record<string, "thumbs_up" | "thumbs_down">>({});
+  const feedbackMutation = useFeedbackMutation();
 
   const mergedPrompts = draftFromFollowup
     ? [draftFromFollowup, ...suggestedPrompts.filter((prompt) => prompt !== draftFromFollowup)]
@@ -40,7 +43,7 @@ export function ChatWorkspace({
           description="在当前知识库里直接提问，回答会附上来源。"
         />
 
-        <div className="rounded-[1.6rem] border border-line bg-white/74 p-4">
+        <div className="rounded-[1.6rem] border border-line bg-panel-strong p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex flex-wrap gap-2">
               <Badge variant="accent">有引用</Badge>
@@ -71,11 +74,22 @@ export function ChatWorkspace({
               key={message.id}
               message={message}
               onUseFollowup={(value) => setDraftFromFollowup(value)}
+              onRateMessage={(messageId, rating) => {
+                setRatings((current) => ({
+                  ...current,
+                  [messageId]: rating,
+                }));
+                feedbackMutation.mutate({
+                  messageId,
+                  rating,
+                });
+              }}
+              selectedRating={ratings[message.id] ?? null}
             />
           ))}
 
           {isSending ? (
-            <article className="rounded-[1.6rem] border border-line bg-white/78 p-4 sm:p-5">
+            <article className="rounded-[1.6rem] border border-line bg-panel-strong p-4 sm:p-5">
               <div className="mb-3 flex items-center gap-2">
                 <div className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent-strong">
                   <Sparkles className="size-4" />

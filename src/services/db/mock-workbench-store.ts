@@ -322,3 +322,7 @@ export function addSourceDocument(args: {
 export function saveResponseFeedback(entry: FeedbackRecord) {
   state.feedbackEntries = [entry, ...state.feedbackEntries];
 }
+
+export function listResponseFeedback() {
+  return structuredClone(state.feedbackEntries);
+}

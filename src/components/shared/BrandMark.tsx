@@ -19,7 +19,7 @@ export function BrandMark({ sourceCount, sessionCount }: BrandMarkProps) {
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm lg:min-w-[240px]">
-          <div className="rounded-[1.3rem] border border-line bg-white/72 px-4 py-3">
+          <div className="rounded-[1.3rem] border border-line bg-panel-strong px-4 py-3">
             <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-strong">
               来源
             </div>
@@ -27,7 +27,7 @@ export function BrandMark({ sourceCount, sessionCount }: BrandMarkProps) {
               {sourceCount ?? "-"}
             </div>
           </div>
-          <div className="rounded-[1.3rem] border border-line bg-white/72 px-4 py-3">
+          <div className="rounded-[1.3rem] border border-line bg-panel-strong px-4 py-3">
             <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-strong">
               会话
             </div>

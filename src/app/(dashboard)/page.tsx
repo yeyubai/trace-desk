@@ -1,8 +1,8 @@
-import { WorkbenchShell } from "@/features/workbench/components/WorkbenchShell";
+import { OverviewPageContent } from "@/features/workbench/components/OverviewPageContent";
 import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSnapshot";
 
 export default function DashboardPage() {
-  const initialSnapshot = getWorkbenchSnapshot();
+  const snapshot = getWorkbenchSnapshot();
 
-  return <WorkbenchShell initialSnapshot={initialSnapshot} />;
+  return <OverviewPageContent initialSnapshot={snapshot} />;
 }

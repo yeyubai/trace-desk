@@ -29,7 +29,7 @@ export function SourceListPanel({ sources }: SourceListPanelProps) {
           {sources.slice(0, 4).map((source) => (
             <div
               key={source.id}
-              className="rounded-[1.4rem] border border-line bg-white/72 p-4"
+              className="rounded-[1.4rem] border border-line bg-panel-strong p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>

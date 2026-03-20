@@ -76,7 +76,7 @@ export function MessageComposer({
           <button
             key={prompt}
             type="button"
-            className="rounded-full border border-line bg-white/70 px-3 py-2 text-xs text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-strong"
+            className="rounded-full border border-line bg-panel-strong px-3 py-2 text-xs text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-strong"
             onClick={() => form.setValue("message", prompt, { shouldValidate: true })}
           >
             {prompt}
@@ -104,7 +104,7 @@ export function MessageComposer({
                 "rounded-full border px-3 py-2 text-xs font-medium transition-colors",
                 currentModelTier === tier
                   ? "border-accent bg-accent-soft text-accent-strong"
-                  : "border-line bg-white/70 text-muted hover:border-accent hover:text-foreground",
+                  : "border-line bg-panel-strong text-muted hover:border-accent hover:text-foreground",
               )}
               onClick={() => form.setValue("modelTier", tier)}
             >

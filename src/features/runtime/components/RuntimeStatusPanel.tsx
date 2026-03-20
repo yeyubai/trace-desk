@@ -56,7 +56,7 @@ export function RuntimeStatusPanel({ runtime }: RuntimeStatusPanelProps) {
             return (
               <div
                 key={dependency.id}
-                className="rounded-[1.25rem] border border-line bg-white/72 p-3"
+                className="rounded-[1.25rem] border border-line bg-panel-strong p-3"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">

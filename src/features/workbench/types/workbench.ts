@@ -12,6 +12,12 @@ export type WorkbenchSignal = {
   detail: string;
 };
 
+export type FeedbackSummary = {
+  total: number;
+  positive: number;
+  negative: number;
+};
+
 export type WorkbenchSnapshot = {
   knowledgeBase: KnowledgeBaseOverview;
   activeSessionId: string;
@@ -20,4 +26,5 @@ export type WorkbenchSnapshot = {
   signals: WorkbenchSignal[];
   suggestedPrompts: string[];
   runtime: RuntimeOverview;
+  feedbackSummary: FeedbackSummary;
 };

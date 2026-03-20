@@ -47,7 +47,7 @@ export function ImportSourceForm({
           description="把文件或网页加入知识库。"
         />
 
-        <div className="rounded-[1.5rem] border border-line bg-white/72 p-4">
+        <div className="rounded-[1.5rem] border border-line bg-panel-strong p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Upload className="size-4 text-accent-strong" />
             上传文件
@@ -94,7 +94,7 @@ export function ImportSourceForm({
         </div>
 
         <form
-          className="space-y-4 rounded-[1.5rem] border border-line bg-white/74 p-4"
+          className="space-y-4 rounded-[1.5rem] border border-line bg-panel-strong p-4"
           onSubmit={form.handleSubmit((values) => {
             onImportUrl(values);
             form.reset({
