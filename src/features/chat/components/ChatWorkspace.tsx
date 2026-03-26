@@ -20,6 +20,7 @@ import { MessageComposer } from "@/features/chat/components/MessageComposer";
 import { useFeedbackMutation } from "@/features/chat/hooks/useChatMutations";
 import type { SendChatMessageFormValues } from "@/features/chat/schemas/send-message";
 import {
+  type ChatFeedbackRating,
   MODEL_TIER_META,
   type ChatMessage,
   type ChatMessagePart,
@@ -33,10 +34,12 @@ type ChatWorkspaceProps = {
   session: ChatSession;
   suggestedPrompts: string[];
   isSending: boolean;
+  initialDraftMessage?: string;
   onSendMessage: (values: SendChatMessageFormValues) => void;
   onStopGeneration: () => void;
   onRetryLastMessage: () => void;
   onSelectCitation?: (sourceId: string, excerpt: string) => void;
+  feedbackByMessage?: Record<string, ChatFeedbackRating>;
 };
 
 type SendIntent = "new" | "retry" | null;
@@ -134,16 +137,18 @@ export function ChatWorkspace({
   session,
   suggestedPrompts,
   isSending,
+  initialDraftMessage,
   onSendMessage,
   onStopGeneration,
   onRetryLastMessage,
   onSelectCitation,
+  feedbackByMessage = {},
 }: ChatWorkspaceProps) {
   const [draftFromFollowup, setDraftFromFollowup] = useState<{
     sessionId: string;
     value: string;
   } | null>(null);
-  const [ratings, setRatings] = useState<Record<string, "thumbs_up" | "thumbs_down">>({});
+  const [ratings, setRatings] = useState<Record<string, ChatFeedbackRating>>(feedbackByMessage);
   const [sendIntent, setSendIntent] = useState<{
     sessionId: string;
     value: SendIntent;
@@ -176,6 +181,21 @@ export function ChatWorkspace({
   useEffect(() => {
     bottomAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [isSending, session.messages.length]);
+
+  useEffect(() => {
+    setRatings(feedbackByMessage);
+  }, [feedbackByMessage]);
+
+  useEffect(() => {
+    if (!initialDraftMessage) {
+      return;
+    }
+
+    setDraftFromFollowup({
+      sessionId: session.id,
+      value: initialDraftMessage,
+    });
+  }, [initialDraftMessage, session.id]);
 
   return (
     <Card className="paper-panel-strong editorial-frame h-full min-h-0 overflow-hidden">

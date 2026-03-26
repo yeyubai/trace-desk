@@ -1,4 +1,5 @@
 export type ModelTier = "fast" | "quality";
+export type ChatFeedbackRating = "thumbs_up" | "thumbs_down";
 
 export type ModelTierOption = {
   value: ModelTier;

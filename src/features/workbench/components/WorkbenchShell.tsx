@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChatWorkspace } from "@/features/chat/components/ChatWorkspace";
 import { SessionRail } from "@/features/chat/components/SessionRail";
 import type { ChatMessage, ChatSession } from "@/features/chat/types/chat";
@@ -23,11 +24,40 @@ import type { WorkbenchSnapshot } from "@/features/workbench/types/workbench";
 
 type WorkbenchShellProps = {
   initialSnapshot: WorkbenchSnapshot;
+  initialSessionId?: string;
+  initialDraftMessage?: string;
 };
 
-export function WorkbenchShell({ initialSnapshot }: WorkbenchShellProps) {
+function resolveSessionId(
+  sessions: ChatSession[],
+  preferredSessionId: string | undefined,
+  fallbackSessionId: string,
+) {
+  if (preferredSessionId && sessions.some((session) => session.id === preferredSessionId)) {
+    return preferredSessionId;
+  }
+
+  if (fallbackSessionId && sessions.some((session) => session.id === fallbackSessionId)) {
+    return fallbackSessionId;
+  }
+
+  return sessions[0]?.id ?? "";
+}
+
+export function WorkbenchShell({
+  initialSnapshot,
+  initialSessionId,
+  initialDraftMessage,
+}: WorkbenchShellProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [selectedSessionId, setSelectedSessionId] = useState(
-    initialSnapshot.activeSessionId,
+    resolveSessionId(
+      initialSnapshot.sessions,
+      initialSessionId,
+      initialSnapshot.activeSessionId,
+    ),
   );
   const [streamSession, setStreamSession] = useState<{
     sessionId: string;
@@ -45,9 +75,36 @@ export function WorkbenchShell({ initialSnapshot }: WorkbenchShellProps) {
   const uploadSourceMutation = useUploadSourceMutation();
 
   const snapshot = snapshotQuery.data;
+  const fallbackSessionId = resolveSessionId(
+    snapshot.sessions,
+    initialSessionId,
+    snapshot.activeSessionId,
+  );
   const activeSession =
     snapshot.sessions.find((session) => session.id === selectedSessionId) ??
+    snapshot.sessions.find((session) => session.id === fallbackSessionId) ??
     snapshot.sessions[0];
+
+  useEffect(() => {
+    if (!activeSession) {
+      return;
+    }
+
+    const currentSessionId = searchParams.get("sessionId");
+
+    if (currentSessionId === activeSession.id) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("sessionId", activeSession.id);
+    const nextQuery = nextParams.toString();
+
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
+  }, [activeSession, pathname, router, searchParams]);
+
   const displayedSession: ChatSession | undefined =
     activeSession && streamSession?.sessionId === activeSession.id
       ? {
@@ -279,6 +336,13 @@ export function WorkbenchShell({ initialSnapshot }: WorkbenchShellProps) {
               session={displayedSession}
               suggestedPrompts={snapshot.suggestedPrompts}
               isSending={streamChat.isStreaming}
+              initialDraftMessage={initialDraftMessage}
+              feedbackByMessage={Object.fromEntries(
+                Object.entries(snapshot.feedbackByMessage).map(([messageId, feedback]) => [
+                  messageId,
+                  feedback.rating,
+                ]),
+              )}
               onSendMessage={handleSendMessage}
               onStopGeneration={handleStopGeneration}
               onRetryLastMessage={handleRetryLastMessage}
@@ -297,6 +361,12 @@ export function WorkbenchShell({ initialSnapshot }: WorkbenchShellProps) {
             sessions={snapshot.sessions}
             activeSessionId={activeSession?.id ?? ""}
             onSelectSession={setSelectedSessionId}
+            feedbackByMessage={Object.fromEntries(
+              Object.entries(snapshot.feedbackByMessage).map(([messageId, feedback]) => [
+                messageId,
+                feedback.rating,
+              ]),
+            )}
           />
           {selectedSource ? (
             <SourceDetailPanel

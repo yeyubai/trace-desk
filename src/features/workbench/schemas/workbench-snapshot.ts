@@ -122,6 +122,14 @@ const feedbackSummarySchema = z.object({
   total: z.number().int().nonnegative(),
   positive: z.number().int().nonnegative(),
   negative: z.number().int().nonnegative(),
+  reviewedMessages: z.number().int().nonnegative(),
+  pendingMessages: z.number().int().nonnegative(),
+});
+
+const messageFeedbackStateSchema = z.object({
+  rating: z.enum(["thumbs_up", "thumbs_down"]),
+  note: z.string().trim().max(240).optional(),
+  updatedAt: z.string().trim().min(1),
 });
 
 export const workbenchSnapshotSchema = z.object({
@@ -133,6 +141,7 @@ export const workbenchSnapshotSchema = z.object({
   suggestedPrompts: z.array(z.string().trim().min(1)),
   runtime: runtimeOverviewSchema,
   feedbackSummary: feedbackSummarySchema,
+  feedbackByMessage: z.record(z.string(), messageFeedbackStateSchema),
 });
 
 export function parseWorkbenchSnapshot(input: unknown) {

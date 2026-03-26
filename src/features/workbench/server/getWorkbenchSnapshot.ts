@@ -14,12 +14,27 @@ export function getWorkbenchSnapshot(): WorkbenchSnapshot {
   const sessions = listChatSessions();
   const sources = listSourceDocumentsByKnowledgeBaseId(knowledgeBase.id);
   const feedbackEntries = listResponseFeedback();
+  const feedbackByMessage = Object.fromEntries(
+    feedbackEntries.map((entry) => [
+      entry.messageId,
+      {
+        rating: entry.rating,
+        note: entry.note,
+        updatedAt: entry.updatedAt,
+      },
+    ]),
+  );
   const positive = feedbackEntries.filter(
     (entry) => entry.rating === "thumbs_up",
   ).length;
   const negative = feedbackEntries.filter(
     (entry) => entry.rating === "thumbs_down",
   ).length;
+  const assistantMessageCount = sessions.reduce(
+    (count, session) =>
+      count + session.messages.filter((message) => message.role === "assistant").length,
+    0,
+  );
 
   return parseWorkbenchSnapshot({
     knowledgeBase,
@@ -56,6 +71,9 @@ export function getWorkbenchSnapshot(): WorkbenchSnapshot {
       total: feedbackEntries.length,
       positive,
       negative,
+      reviewedMessages: feedbackEntries.length,
+      pendingMessages: Math.max(assistantMessageCount - feedbackEntries.length, 0),
     },
+    feedbackByMessage,
   });
 }

@@ -11,7 +11,10 @@ const feedbackSchema = z.object({
 export async function POST(request: Request) {
   try {
     const payload = feedbackSchema.parse(await request.json());
-    saveResponseFeedback(payload);
+    saveResponseFeedback({
+      ...payload,
+      updatedAt: new Date().toISOString(),
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

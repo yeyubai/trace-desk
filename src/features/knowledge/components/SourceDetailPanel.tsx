@@ -76,11 +76,11 @@ export function SourceDetailPanel({
               <div className="flex items-start gap-2 text-muted">
                 <Tag className="mt-0.5 size-4 text-accent-strong" />
                 <div>
-                  <p className="font-medium text-foreground">{source.citationLabel}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted">
-                    最近更新于 {formatRelativeTime(source.updatedAt)}
-                  </p>
-                </div>
+                    <p className="font-medium text-foreground">{source.citationLabel}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted">
+                      最近更新于 <span suppressHydrationWarning>{formatRelativeTime(source.updatedAt)}</span>
+                    </p>
+                  </div>
               </div>
             </div>
           </div>

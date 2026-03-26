@@ -75,7 +75,7 @@ export function SourceListPanel({
                   {formatSourceKindLabel(source.kind)}
                 </div>
                 <span>{source.chunkCount} 个分块</span>
-                <span>{formatRelativeTime(source.updatedAt)}</span>
+                <span suppressHydrationWarning>{formatRelativeTime(source.updatedAt)}</span>
               </div>
             </button>
           ))}

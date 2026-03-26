@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type {
   ChatMessage,
   ChatSession,
@@ -22,6 +24,7 @@ type FeedbackRecord = {
   messageId: string;
   rating: "thumbs_up" | "thumbs_down";
   note?: string;
+  updatedAt: string;
 };
 
 type MockWorkbenchState = {
@@ -31,6 +34,12 @@ type MockWorkbenchState = {
   sessions: ChatSession[];
   feedbackEntries: FeedbackRecord[];
 };
+
+const MOCK_STATE_FILE = path.join(
+  process.cwd(),
+  "tmp",
+  "mock-workbench-state.json",
+);
 
 function createTextPart(markdown: string) {
   return {
@@ -288,7 +297,33 @@ function createSeedState(): MockWorkbenchState {
   };
 }
 
-const state = createSeedState();
+function ensureStateFile() {
+  const directory = path.dirname(MOCK_STATE_FILE);
+
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+
+  if (!fs.existsSync(MOCK_STATE_FILE)) {
+    fs.writeFileSync(
+      MOCK_STATE_FILE,
+      JSON.stringify(createSeedState(), null, 2),
+      "utf-8",
+    );
+  }
+}
+
+function readState(): MockWorkbenchState {
+  ensureStateFile();
+
+  const raw = fs.readFileSync(MOCK_STATE_FILE, "utf-8");
+  return JSON.parse(raw) as MockWorkbenchState;
+}
+
+function writeState(nextState: MockWorkbenchState) {
+  ensureStateFile();
+  fs.writeFileSync(MOCK_STATE_FILE, JSON.stringify(nextState, null, 2), "utf-8");
+}
 
 function normalizeDuplicateKey(source: Pick<SourceDocumentSummary, "kind" | "title" | "url">) {
   if (source.url) {
@@ -304,26 +339,29 @@ function normalizeDuplicateKey(source: Pick<SourceDocumentSummary, "kind" | "tit
 }
 
 export function getKnowledgeBaseOverview() {
-  return structuredClone(state.knowledgeBase);
+  return structuredClone(readState().knowledgeBase);
 }
 
 export function listSourceDocumentsByKnowledgeBaseId(knowledgeBaseId: string) {
+  const state = readState();
   return structuredClone(
     state.sources.filter((source) => source.knowledgeBaseId === knowledgeBaseId),
   );
 }
 
 export function getSourceChunkRecordsByKnowledgeBaseId(knowledgeBaseId: string) {
+  const state = readState();
   return structuredClone(
     state.sourceChunks.filter((chunk) => chunk.knowledgeBaseId === knowledgeBaseId),
   );
 }
 
 export function listChatSessions() {
-  return structuredClone(state.sessions);
+  return structuredClone(readState().sessions);
 }
 
 export function getChatSessionById(sessionId: string) {
+  const state = readState();
   return structuredClone(
     state.sessions.find((session) => session.id === sessionId) ?? null,
   );
@@ -335,6 +373,7 @@ export function appendMessagesToSession(args: {
   userMessage: ChatMessage;
   assistantMessage: ChatMessage;
 }) {
+  const state = readState();
   state.sessions = state.sessions.map((session) => {
     if (session.id !== args.sessionId) {
       return session;
@@ -354,12 +393,15 @@ export function appendMessagesToSession(args: {
       messages: [...session.messages, args.userMessage, args.assistantMessage],
     };
   });
+
+  writeState(state);
 }
 
 export function addSourceDocument(args: {
   source: SourceDocumentSummary;
   chunks: SourceChunkRecord[];
 }) {
+  const state = readState();
   const duplicateOf = state.sources.find(
     (existing) => normalizeDuplicateKey(existing) === normalizeDuplicateKey(args.source),
   );
@@ -384,12 +426,25 @@ export function addSourceDocument(args: {
     chunkCount: state.sourceChunks.length,
     lastIndexedAt: sourceWithDuplicateHint.updatedAt,
   };
+
+  writeState(state);
 }
 
 export function saveResponseFeedback(entry: FeedbackRecord) {
-  state.feedbackEntries = [entry, ...state.feedbackEntries];
+  const state = readState();
+  const nextEntry = {
+    ...entry,
+    updatedAt: entry.updatedAt || new Date().toISOString(),
+  };
+
+  state.feedbackEntries = [
+    nextEntry,
+    ...state.feedbackEntries.filter((item) => item.messageId !== entry.messageId),
+  ];
+
+  writeState(state);
 }
 
 export function listResponseFeedback() {
-  return structuredClone(state.feedbackEntries);
+  return structuredClone(readState().feedbackEntries);
 }

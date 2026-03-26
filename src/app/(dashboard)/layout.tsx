@@ -2,6 +2,8 @@ import { DashboardTopBar } from "@/features/workbench/components/DashboardTopBar
 import { WorkspaceStatusStrip } from "@/features/workbench/components/WorkspaceStatusStrip";
 import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSnapshot";
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardLayout({
   children,
 }: Readonly<{
