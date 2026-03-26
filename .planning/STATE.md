@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** 团队成员能基于可信引用，快速从文档和网页中得到可追溯的答案，而不是只看到一个“像是正确”的聊天回复。
-**Current focus:** Grounded Chat Core
+**Current focus:** Sessions & Feedback Loop
 
 ## Current Position
 
-Current Phase: 3
-Current Phase Name: Grounded Chat Core
+Current Phase: 4
+Current Phase Name: Sessions & Feedback Loop
 Total Phases: 5
-Current Plan: 2
+Current Plan: 0
 Total Plans in Phase: 3
-Status: In progress
-Last Activity: 2026-03-26 — Completed Phase 3 plan 03-02 and added evidence-gated grounded answer behavior
-Last Activity Description: Retrieval now uses recent context, and chat refuses server-side when no usable evidence exists; next step is 03-03.
-Progress: 53%
+Status: Ready to discuss
+Last Activity: 2026-03-26 — Completed Phase 3 grounded chat core and moved project focus to sessions and feedback
+Last Activity Description: Streaming, evidence-gated refusal, model tier awareness, and chat state UX are in place; next step is to discuss Phase 4.
+Progress: 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: session-based
 - Total execution time: session-based
 
@@ -32,10 +32,10 @@ Progress: 53%
 |-------|-------|-------|----------|
 | 1 | 3 | session-based | session-based |
 | 2 | 3 | session-based | session-based |
-| 3 | 2 | session-based | session-based |
+| 3 | 3 | session-based | session-based |
 
 **Recent Trend:**
-- Last 5 plans: 02-01, 02-02, 02-03, 03-01, 03-02
+- Last 5 plans: 02-02, 02-03, 03-01, 03-02, 03-03
 - Trend: Improving
 
 ## Decisions Made
@@ -56,6 +56,7 @@ Progress: 53%
 | 3 | Open source detail when a citation is clicked | Reuses the Phase 2 detail surface instead of creating a new overlay |
 | 3 | Build retrieval query from recent context plus current question | Improves follow-up retrieval without introducing full history bloat |
 | 3 | Refuse server-side when there are no usable citations | Prevents the model from answering with unsupported evidence |
+| 3 | Show model tier and workspace state explicitly in the chat UI | Users should always understand what mode answered and whether the answer is retrying, refusing, or complete |
 
 ## Pending Todos
 
@@ -68,6 +69,6 @@ None yet.
 
 ## Session
 
-Last Date: 2026-03-26 02:40
-Stopped At: Phase 3 plan 03-02 completed with `lint / typecheck / build` passing; next recommended command is to continue Phase 3 plan execution
+Last Date: 2026-03-26 03:05
+Stopped At: Phase 3 completed with `lint / typecheck / build` passing; next recommended command is `$gsd-discuss-phase 4`
 Resume File: None

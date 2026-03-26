@@ -57,6 +57,7 @@
 | 重复导入 Phase 2 先提示不合并 | 在 mock 阶段优先保证透明反馈而不是复杂覆盖逻辑 | ✓ Good |
 | 聊天链路先稳定 NDJSON 流式协议和最近上下文，再继续深化 grounded answer | 先把消息契约和会话 continuity 打稳，后续增强才不会返工 | ✓ Good |
 | grounded answer 先由服务端做证据门控 | 没有可用 citation 时直接拒答，比依赖模型自觉更稳 | ✓ Good |
+| 模型档位感知与聊天状态展示放在交互层闭环 | 不扩展协议也能让用户理解当前档位与回答状态 | ✓ Good |
 
 ## Evolution
 
@@ -76,4 +77,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after Phase 3 Plan 02*
+*Last updated: 2026-03-26 after Phase 3 complete*
