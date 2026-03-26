@@ -55,6 +55,7 @@
 - 前端框架：`Next.js App Router + React + TypeScript`
 - UI：`shadcn/ui`
 - 前端数据层：`TanStack Query`
+- RAG 编排：优先采用 `LangChain.js` 统一 `Document -> split -> retrieval pipeline`，避免继续用零散 demo 逻辑拼接
 - AI 接入：阿里云百炼，Node.js 侧优先使用官方兼容接口；首版可用 `openai` SDK 对接百炼兼容 API
 - 数据库：`PostgreSQL`
 - 向量检索：`pgvector`
@@ -93,7 +94,45 @@
   - 阿里云百炼兼容客户端
   - Redis 客户端
   - OSS 客户端
+- `TXT / Markdown / URL` 导入会生成可检索正文分块；`PDF` 暂只保留来源记录并显式标记为不可检索，避免误导为“已成功入库可问答”。
 - `POST /api/chat` 已支持按环境变量在 `mock` 回答与 `百炼兼容接口` 之间切换；引用仍由服务端检索结果组装，不允许模型伪造来源。
+- `Sessions / Feedback` 已打通会话恢复、反馈持久化和下一步建议闭环。
+- URL 导入已支持来源级 diagnostics：`抽取策略 / 正文长度 / chunk 预览 / 告警`。
+- 当前 chunking 已开始切到 `LangChain.js`，后续继续把 retrieval / vector store / loaders 也统一到该体系。
+
+### 企业级 RAG 设计原则
+后续 RAG 继续按企业级应用口径推进，而不是 demo：
+
+1. **导入必须可验证**
+   - 用户必须知道抓到了多少正文
+   - 用户必须能看到 chunk 预览
+   - 用户必须知道为什么这条来源可能问不到
+
+2. **检索必须可解释**
+   - 只允许 `retrievable` 来源进入检索
+   - 低质量来源要降权或明确提示
+   - 未命中时不能只说“没有结果”，要能解释是否由于内容过薄、抽取回退或证据不足
+
+3. **生成必须受证据门控**
+   - 没有可用 citation 时，服务端直接拒答
+   - 不允许模型伪造来源
+
+4. **前后端必须共享同一套语义**
+   - `source status`
+   - `retrieval status`
+   - `diagnostics`
+   - `match / no-match`
+   - `refusal reason`
+
+### 最小端到端验收
+每次 RAG 相关变更都至少验证这一条：
+
+1. 导入一条网页来源
+2. 查看来源详情中的 diagnostics
+3. 提一个能命中该来源的问题
+4. 确认回答展示引用
+5. 再提一个无法命中的问题
+6. 确认系统明确拒答且不伪造引用
 
 ### 4-6 周分期
 按“每周都能练到新能力”的节奏推进：

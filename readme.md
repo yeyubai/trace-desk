@@ -11,6 +11,7 @@
 - 前端数据层：`TanStack Query`
 - 表单与校验：`react-hook-form + zod`
 - AI：阿里云百炼；Node.js 侧优先通过兼容接口接入
+- RAG 编排：`LangChain.js`（当前已先接入 `Document + TextSplitter`）
 - 数据库：`PostgreSQL`
 - 向量检索：`pgvector`
 - 对象存储：阿里云 `OSS`
@@ -32,7 +33,48 @@
 - 已完成 `Next.js App Router` 项目初始化，并直接在当前仓库根目录落项目结构。
 - 已搭好首版工作台页面骨架：知识库概览、来源导入、问答区、历史会话、运行时接入状态。
 - 已提供 mock 数据链路与 Route Handlers：`/api/workbench`、`/api/chat`、`/api/knowledge/*`、`/api/feedback`。
+- `TXT / Markdown / URL` 导入现已写入可检索正文分块；`PDF` 仍仅记录来源并标记为暂不可检索。
 - 已补真实服务接入口骨架：环境变量校验、`PostgreSQL/pgvector` 初始化 SQL、百炼兼容客户端、Redis 客户端、OSS 客户端。
+- 历史会话恢复、反馈持久化、继续追问建议已打通。
+- 导入后的来源详情已支持显示 `抽取策略 / 正文长度 / chunk 预览 / 诊断告警`，便于判断“为什么导入后可能问不到”。
+- 切块链路已开始切到 `LangChain.js`，当前优先落在 `Document + RecursiveCharacterTextSplitter / MarkdownTextSplitter`。
+
+## 当前 RAG 能力
+当前项目已经具备企业级 RAG 所需的基础分层，但仍处于持续收敛中：
+
+1. **Ingestion**
+   - 支持 `TXT / Markdown / URL / PDF`
+   - URL 导入会暴露正文抽取策略、正文长度和 chunk 诊断
+
+2. **Chunking**
+   - 当前已开始使用 `LangChain.js` splitter
+   - 每个来源会保留 chunk 预览与关键词样本
+
+3. **Retrieval**
+   - 仅 `retrievable` 来源进入检索
+   - `thin`、`body-fallback` 这类低质量来源会被降权
+
+4. **Answering**
+   - 回答必须带引用
+   - 证据不足时由服务端明确拒答，不依赖模型自由发挥
+
+5. **Observability**
+   - 用户可以在来源详情看到导入诊断
+   - 当前已能解释“导入了为什么还问不到”的一部分原因
+
+## 最小验收路径
+推荐用下面这条链路验证当前系统是否真正可用：
+
+1. 在 `/import` 导入一条网页链接
+2. 打开该来源详情，确认：
+   - `抽取策略`
+   - `正文长度`
+   - `chunk 预览`
+   - `诊断告警`
+3. 到 `/chat` 针对该来源正文提问
+4. 观察是否：
+   - 命中该来源并展示引用
+   - 或明确拒答并给出可解释原因
 
 ## 本地开发
 1. 安装依赖：`npm install`
