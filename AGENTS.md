@@ -9,14 +9,21 @@
 - 项目介绍、技术栈说明、开发入口放在 `readme.md`。
 - 功能规划、阶段目标、接口与实体设计放在 `plan.md`。
 - 项目内 Codex 规则统一维护在 `.codex/rules/`。
+- 若仓库存在 `.planning/`，则 `PROJECT.md`、`REQUIREMENTS.md`、`ROADMAP.md`、`STATE.md` 作为当前 GSD 工作流与阶段状态来源。
 
 ## Agent Working Rules
 - 开始修改前，先阅读 `readme.md`、`plan.md` 和 `.codex/rules/` 中与当前任务相关的规则。
+- 若当前任务处于 GSD phase 流程中，开始执行前再补读 `.planning/PROJECT.md`、`.planning/REQUIREMENTS.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 - 默认遵循当前项目技术路线：`Next.js App Router + React + TypeScript + shadcn/ui + Tailwind CSS + TanStack Query + react-hook-form + zod + PostgreSQL + pgvector + OSS + Redis + 阿里云百炼`。
 - 默认使用 `Next.js Route Handlers` 提供接口；如无明确需要，不额外引入独立后端。
 - 聊天消息结构优先按 `parts` 设计。
 - 知识库问答必须支持引用来源；未命中时必须明确拒答，不能伪造依据。
 - 新增依赖前先判断是否直接服务当前阶段目标，避免过早堆栈。
+
+## GSD Workflow Rules
+- 本仓库允许使用 GSD 的 phase / roadmap / state 工作流，但默认将 `.planning/` 视为本地规划空间。
+- GSD 默认英文 `docs:`、`feat:`、`fix:` 提交格式不覆盖本仓库 Git 规范；实际提交仍统一使用中文 `类型：简要说明`。
+- 执行 phase 时优先保证 `ROADMAP.md` 的阶段边界清晰，不跨 phase 混做无关事项。
 
 ## Documentation Rules
 - 修改技术路线、关键接口、核心实体、阶段目标时，同步更新 `plan.md`。
