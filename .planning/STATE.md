@@ -1,3 +1,22 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: MVP
+current_phase: 5
+current_phase_name: Reliability & Portfolio Finish
+current_plan: 3
+status: milestone_complete
+stopped_at: v1.0 milestone archived and ready for next-milestone planning
+last_updated: "2026-03-27T00:05:00+08:00"
+last_activity: 2026-03-27
+progress:
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 15
+  completed_plans: 15
+  percent: 100
+---
+
 # Project State
 
 ## Project Reference
@@ -5,7 +24,7 @@
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** 团队成员能基于可信引用，快速从文档和网页中得到可追溯的答案，而不是只看到一个“像是正确”的聊天回复。
-**Current focus:** Milestone wrap-up
+**Current focus:** Planning next milestone
 
 ## Current Position
 
@@ -14,14 +33,15 @@ Current Phase Name: Reliability & Portfolio Finish
 Total Phases: 5
 Current Plan: 3
 Total Plans in Phase: 3
-Status: Phase complete
-Last Activity: 2026-03-26 — Completed Phase 5 and finalized enterprise-grade RAG MVP framing
-Last Activity Description: Import diagnostics, LangChain-based chunking, diagnostics-aware retrieval, and product-facing RAG validation docs are all in place.
+Status: Milestone complete
+Last Activity: 2026-03-27 — Archived v1.0 milestone and prepared the project for next-milestone planning
+Last Activity Description: All five phases are complete, milestone archives were repaired to v1.0, and the codebase is ready for the next milestone scope.
 Progress: 100%
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 15
 - Average duration: session-based
 - Total execution time: session-based
@@ -37,6 +57,7 @@ Progress: 100%
 | 5 | 3 | session-based | session-based |
 
 **Recent Trend:**
+
 - Last 5 plans: 04-01, 04-02/03, 05-01, 05-02, 05-03
 - Trend: Improving
 
@@ -76,6 +97,6 @@ Progress: 100%
 
 ## Session
 
-Last Date: 2026-03-26 23:45
-Stopped At: Phase 5 completed; next recommended command is milestone completion / wrap-up
+Last Date: 2026-03-27 00:05
+Stopped At: v1.0 milestone archived locally; next logical step is to define the next milestone scope
 Resume File: None
