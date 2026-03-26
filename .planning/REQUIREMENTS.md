@@ -20,8 +20,8 @@
 
 ### Grounded Chat
 
-- [ ] **CHAT-01**: User can ask multi-turn questions against the knowledge base from the chat workspace.
-- [ ] **CHAT-02**: Assistant responses preserve `parts`-friendly message structure and session history.
+- [x] **CHAT-01**: User can ask multi-turn questions against the knowledge base from the chat workspace.
+- [x] **CHAT-02**: Assistant responses preserve `parts`-friendly message structure and session history.
 - [ ] **CHAT-03**: When retrieval hits, answers show citations tied to source records.
 - [ ] **CHAT-04**: When retrieval misses, assistant explicitly states no reliable evidence was found and does not fabricate citations.
 - [ ] **CHAT-05**: User can choose between `Fast` and `Quality` model tiers and see which tier answered.
@@ -67,8 +67,8 @@
 | INGEST-02 | Phase 2 | Complete |
 | INGEST-03 | Phase 2 | Complete |
 | INGEST-04 | Phase 2 | Complete |
-| CHAT-01 | Phase 3 | Pending |
-| CHAT-02 | Phase 3 | Pending |
+| CHAT-01 | Phase 3 | Complete |
+| CHAT-02 | Phase 3 | Complete |
 | CHAT-03 | Phase 3 | Pending |
 | CHAT-04 | Phase 3 | Pending |
 | CHAT-05 | Phase 3 | Pending |

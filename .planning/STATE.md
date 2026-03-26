@@ -12,17 +12,17 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 Current Phase: 3
 Current Phase Name: Grounded Chat Core
 Total Phases: 5
-Current Plan: 0
+Current Plan: 1
 Total Plans in Phase: 3
-Status: Ready to discuss
-Last Activity: 2026-03-26 — Completed Phase 2 ingestion experience and moved project focus to grounded chat
-Last Activity Description: Ingestion now exposes retrievable vs stored-only states, inline feedback, and source detail explanations; next step is to discuss Phase 3.
-Progress: 40%
+Status: In progress
+Last Activity: 2026-03-26 — Completed Phase 3 plan 03-01 and stabilized chat stream/context contract
+Last Activity Description: Chat now uses explicit stream events, recent conversation context, and citation-to-source-detail linking; next step is 03-02.
+Progress: 47%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: session-based
 - Total execution time: session-based
 
@@ -32,9 +32,10 @@ Progress: 40%
 |-------|-------|-------|----------|
 | 1 | 3 | session-based | session-based |
 | 2 | 3 | session-based | session-based |
+| 3 | 1 | session-based | session-based |
 
 **Recent Trend:**
-- Last 5 plans: 01-02, 01-03, 02-01, 02-02, 02-03
+- Last 5 plans: 01-03, 02-01, 02-02, 02-03, 03-01
 - Trend: Improving
 
 ## Decisions Made
@@ -50,6 +51,9 @@ Progress: 40%
 | 2 | Separate ingestion state from retrieval state | Users need to know whether a source was saved versus whether it can answer questions |
 | 2 | Let duplicate imports through but mark them clearly | Transparent feedback is lower risk than auto-merge in the current mock stage |
 | 2 | Show import results inline and auto-focus the newest source | Reduces ambiguity after upload/import actions |
+| 3 | Use explicit `init / delta / complete / error` events for chat streaming | Keeps route, hook, and UI aligned on one protocol |
+| 3 | Feed only recent text messages into prompt context | Balances continuity with prompt size and implementation cost |
+| 3 | Open source detail when a citation is clicked | Reuses the Phase 2 detail surface instead of creating a new overlay |
 
 ## Pending Todos
 
@@ -62,6 +66,6 @@ None yet.
 
 ## Session
 
-Last Date: 2026-03-26 01:25
-Stopped At: Phase 2 completed with `lint / typecheck / build` passing; next recommended command is `$gsd-discuss-phase 3`
+Last Date: 2026-03-26 02:05
+Stopped At: Phase 3 plan 03-01 completed with `lint / typecheck / build` passing; next recommended command is to continue Phase 3 plan execution
 Resume File: None
