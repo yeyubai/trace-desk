@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle, Send } from "lucide-react";
+import { LoaderCircle, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { sendChatMessageSchema, type SendChatMessageFormValues } from "@/features/chat/schemas/send-message";
@@ -76,7 +76,7 @@ export function MessageComposer({
           <button
             key={prompt}
             type="button"
-            className="rounded-full border border-line bg-panel-strong px-3 py-2 text-xs text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-strong"
+            className="rounded-full border border-line bg-white/80 px-3 py-2 text-xs text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-strong"
             onClick={() => form.setValue("message", prompt, { shouldValidate: true })}
           >
             {prompt}
@@ -84,48 +84,52 @@ export function MessageComposer({
         ))}
       </div>
 
-      <Textarea
-        className="min-h-24"
-        placeholder="输入问题，例如：首版知识库回答必须优先保证哪些行为？"
-        {...form.register("message")}
-      />
+      <div className="rounded-[1.7rem] border border-line bg-white/92 p-3 shadow-[0_18px_38px_rgba(20,34,44,0.08)]">
+        <Textarea
+          className="min-h-[84px] resize-none border-0 bg-transparent px-1 py-1 text-[15px] shadow-none focus:border-0"
+          placeholder="发消息..."
+          {...form.register("message")}
+        />
 
-      {form.formState.errors.message ? (
-        <p className="text-sm text-warning">{form.formState.errors.message.message}</p>
-      ) : null}
+        {form.formState.errors.message ? (
+          <p className="px-1 pt-1 text-sm text-warning">
+            {form.formState.errors.message.message}
+          </p>
+        ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
-          {(["fast", "quality"] as const).map((tier) => (
-            <button
-              key={tier}
-              type="button"
-              className={cn(
-                "rounded-full border px-3 py-2 text-xs font-medium transition-colors",
-                currentModelTier === tier
-                  ? "border-accent bg-accent-soft text-accent-strong"
-                  : "border-line bg-panel-strong text-muted hover:border-accent hover:text-foreground",
-              )}
-              onClick={() => form.setValue("modelTier", tier)}
-            >
-              {tierLabelMap[tier]}
-            </button>
-          ))}
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <div className="flex gap-2">
+            {(["fast", "quality"] as const).map((tier) => (
+              <button
+                key={tier}
+                type="button"
+                className={cn(
+                  "rounded-full border px-3 py-2 text-xs font-medium transition-colors",
+                  currentModelTier === tier
+                    ? "border-accent bg-accent-soft text-accent-strong"
+                    : "border-line bg-white text-muted hover:border-accent hover:text-foreground",
+                )}
+                onClick={() => form.setValue("modelTier", tier)}
+              >
+                {tierLabelMap[tier]}
+              </button>
+            ))}
+          </div>
+
+          <Button type="submit" disabled={isSubmitting} className="rounded-full px-4">
+            {isSubmitting ? (
+              <>
+                <LoaderCircle className="size-4 animate-spin" />
+                生成中
+              </>
+            ) : (
+              <>
+                <SendHorizontal className="size-4" />
+                发送
+              </>
+            )}
+          </Button>
         </div>
-
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <LoaderCircle className="size-4 animate-spin" />
-              生成中
-            </>
-          ) : (
-            <>
-              <Send className="size-4" />
-              提问
-            </>
-          )}
-        </Button>
       </div>
     </form>
   );

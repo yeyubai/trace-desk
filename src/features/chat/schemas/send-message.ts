@@ -7,8 +7,8 @@ export const sendChatMessageSchema = z.object({
   message: z
     .string()
     .trim()
-    .min(6, "问题至少输入 6 个字")
-    .max(800, "问题请控制在 800 个字以内"),
+    .min(1, "请输入内容")
+    .max(1200, "内容请控制在 1200 个字以内"),
 });
 
 export type SendChatMessageFormValues = z.infer<typeof sendChatMessageSchema>;

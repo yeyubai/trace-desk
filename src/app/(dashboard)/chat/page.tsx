@@ -6,12 +6,14 @@ export default function ChatPage() {
   const snapshot = getWorkbenchSnapshot();
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
       <PageHeader
         title="问答"
         description="直接提问、查看回答来源，并继续追问。"
       />
-      <WorkbenchShell initialSnapshot={snapshot} />
-    </>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <WorkbenchShell initialSnapshot={snapshot} />
+      </div>
+    </div>
   );
 }

@@ -13,6 +13,7 @@ type ChatMessageCardProps = {
   onUseFollowup?: (value: string) => void;
   onRateMessage?: (messageId: string, rating: "thumbs_up" | "thumbs_down") => void;
   selectedRating?: "thumbs_up" | "thumbs_down" | null;
+  onSelectCitation?: (sourceId: string, excerpt: string) => void;
 };
 
 export function ChatMessageCard({
@@ -20,16 +21,17 @@ export function ChatMessageCard({
   onUseFollowup,
   onRateMessage,
   selectedRating = null,
+  onSelectCitation,
 }: ChatMessageCardProps) {
   const isAssistant = message.role === "assistant";
 
   return (
     <article
       className={cn(
-        "rounded-[1.6rem] border p-4 sm:p-5",
+        "max-w-[90%] rounded-[1.6rem] border p-4 sm:p-5",
         isAssistant
           ? "border-line bg-panel-strong"
-          : "border-accent/25 bg-accent text-white shadow-[0_18px_40px_rgba(var(--accent-rgb),0.18)]",
+          : "ml-auto border-accent/25 bg-accent text-white shadow-[0_18px_40px_rgba(var(--accent-rgb),0.18)]",
       )}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -47,17 +49,12 @@ export function ChatMessageCard({
             )}
           </div>
           <div>
-            <p className="text-sm font-medium">
-              {isAssistant ? "回答" : "问题"}
-            </p>
             <p className={cn("text-xs", isAssistant ? "text-muted" : "text-white/72")}>
               {formatTimestamp(message.createdAt)}
             </p>
           </div>
         </div>
-        <Badge variant={isAssistant ? "accent" : "neutral"}>
-          {isAssistant ? "已附来源" : "提问"}
-        </Badge>
+        {isAssistant ? <Badge variant="accent">已附来源</Badge> : null}
       </div>
 
       <div className="space-y-4">
@@ -86,18 +83,22 @@ export function ChatMessageCard({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {part.citations.map((citation) => (
-                    <div
+                    <button
+                      type="button"
                       key={citation.id}
                       className={cn(
-                        "rounded-full border px-3 py-2 text-xs",
+                        "rounded-full border px-3 py-2 text-xs transition-colors",
                         isAssistant
-                          ? "border-accent/18 bg-accent-soft text-accent-strong"
-                          : "border-white/18 bg-white/12 text-white",
+                          ? "border-accent/18 bg-accent-soft text-accent-strong hover:border-accent hover:bg-accent/12"
+                          : "border-white/18 bg-white/12 text-white hover:bg-white/18",
                       )}
+                      onClick={() =>
+                        onSelectCitation?.(citation.sourceId, citation.excerpt)
+                      }
                     >
                       <span className="font-mono">{citation.citationLabel}</span>{" "}
                       {citation.sourceTitle}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>

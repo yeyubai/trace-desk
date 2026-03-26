@@ -55,3 +55,24 @@ export type SendChatMessageInput = {
   modelTier: ModelTier;
   message: string;
 };
+
+export type ChatStreamEvent =
+  | {
+      type: "init";
+      userMessage: ChatMessage;
+      assistantMessage: ChatMessage;
+    }
+  | {
+      type: "delta";
+      messageId: string;
+      chunk: string;
+    }
+  | {
+      type: "complete";
+      assistantMessage: ChatMessage;
+      snapshot: import("@/features/workbench/types/workbench").WorkbenchSnapshot;
+    }
+  | {
+      type: "error";
+      message: string;
+    };

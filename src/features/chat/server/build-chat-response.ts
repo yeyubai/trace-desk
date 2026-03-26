@@ -8,9 +8,17 @@ import {
   rerankKnowledgeMatches,
 } from "@/services/retrieval/search-knowledge-base";
 
-function buildUserMessage(question: string): ChatMessage {
+type BuildMessageIds = {
+  userMessageId?: string;
+  assistantMessageId?: string;
+};
+
+export function buildUserMessage(
+  question: string,
+  ids?: BuildMessageIds,
+): ChatMessage {
   return {
-    id: crypto.randomUUID(),
+    id: ids?.userMessageId ?? crypto.randomUUID(),
     role: "user",
     createdAt: new Date().toISOString(),
     parts: [
@@ -23,7 +31,28 @@ function buildUserMessage(question: string): ChatMessage {
   };
 }
 
-function buildAssistantMessage(args: {
+export function buildAssistantDraftMessage(assistantMessageId?: string): ChatMessage {
+  return {
+    id: assistantMessageId ?? crypto.randomUUID(),
+    role: "assistant",
+    createdAt: new Date().toISOString(),
+    parts: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        markdown: "",
+      },
+      {
+        id: crypto.randomUUID(),
+        type: "status",
+        status: "streaming",
+        label: "正在生成回答",
+      },
+    ],
+  };
+}
+
+export function buildAssistantMessage(args: {
   answerMarkdown: string;
   citations: Array<{
     id: string;
@@ -33,9 +62,10 @@ function buildAssistantMessage(args: {
     excerpt: string;
   }>;
   followups: string[];
+  assistantMessageId?: string;
 }): ChatMessage {
   return {
-    id: crypto.randomUUID(),
+    id: args.assistantMessageId ?? crypto.randomUUID(),
     role: "assistant",
     createdAt: new Date().toISOString(),
     parts: [
@@ -62,21 +92,27 @@ function buildAssistantMessage(args: {
   };
 }
 
-export async function buildChatResponse(payload: SendChatMessageInput) {
+export async function buildChatResponse(
+  payload: SendChatMessageInput,
+  ids?: BuildMessageIds,
+) {
   const retrievedMatches = retrieveKnowledgeMatches({
     knowledgeBaseId: payload.knowledgeBaseId,
     query: payload.message,
   });
 
   const rerankedMatches = rerankKnowledgeMatches(retrievedMatches);
-  const userMessage = buildUserMessage(payload.message);
+  const userMessage = buildUserMessage(payload.message, ids);
   const answer = await generateGroundedAnswer({
     knowledgeBaseId: payload.knowledgeBaseId,
     modelTier: payload.modelTier,
     question: payload.message,
     matches: rerankedMatches,
   });
-  const assistantMessage = buildAssistantMessage(answer);
+  const assistantMessage = buildAssistantMessage({
+    ...answer,
+    assistantMessageId: ids?.assistantMessageId,
+  });
 
   return {
     userMessage,
