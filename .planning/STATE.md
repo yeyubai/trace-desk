@@ -12,17 +12,17 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 Current Phase: 5
 Current Phase Name: Reliability & Portfolio Finish
 Total Phases: 5
-Current Plan: 0
+Current Plan: 1
 Total Plans in Phase: 3
-Status: Ready to discuss
-Last Activity: 2026-03-26 — Completed Phase 4 sessions and feedback loop and moved project focus to reliability
-Last Activity Description: Session restore, persistent feedback, next-step suggestions, and browser-verified feedback loop are in place; next step is to discuss Phase 5.
-Progress: 80%
+Status: In progress
+Last Activity: 2026-03-26 — Completed Phase 5 plan 05-01 and added import diagnostics for RAG verification
+Last Activity Description: URL import now exposes extraction mode, text length, chunk previews, and warnings; next step is 05-02.
+Progress: 87%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: session-based
 - Total execution time: session-based
 
@@ -34,9 +34,10 @@ Progress: 80%
 | 2 | 3 | session-based | session-based |
 | 3 | 3 | session-based | session-based |
 | 4 | 3 | session-based | session-based |
+| 5 | 1 | session-based | session-based |
 
 **Recent Trend:**
-- Last 5 plans: 03-01, 03-02, 03-03, 04-01, 04-02/03
+- Last 5 plans: 03-02, 03-03, 04-01, 04-02/03, 05-01
 - Trend: Improving
 
 ## Decisions Made
@@ -60,10 +61,11 @@ Progress: 80%
 | 3 | Show model tier and workspace state explicitly in the chat UI | Users should always understand what mode answered and whether the answer is retrying, refusing, or complete |
 | 4 | Persist mock workbench state to disk | In-memory state was not reliable across requests, breaking feedback/session verification |
 | 4 | Use Sessions page as a conversation console | History list, session summary, followups, and continue action belong together |
+| 5 | Add extraction diagnostics to imported sources | RAG reliability requires import-stage observability, not just downstream refusal |
 
 ## Pending Todos
 
-None yet.
+- 1 pending todo - see `.planning/todos/pending/2026-03-26-rag-unified-design-and-import-audit.md`
 
 ## Blockers
 
@@ -72,6 +74,6 @@ None yet.
 
 ## Session
 
-Last Date: 2026-03-26 15:05
-Stopped At: Phase 4 completed with browser-verified restore/feedback flow; next recommended command is `$gsd-discuss-phase 5`
+Last Date: 2026-03-26 16:00
+Stopped At: Phase 5 plan 05-01 completed with import diagnostics and URL extraction verification; next recommended command is to continue Phase 5 execution
 Resume File: None

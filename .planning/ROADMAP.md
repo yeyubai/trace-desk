@@ -92,7 +92,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: 补齐关键空态、失败态、长会话/长列表等可靠性细节
+- [x] 05-01: 补齐关键空态、失败态、长会话/长列表等可靠性细节
 - [ ] 05-02: 跑通 lint/typecheck/build 与核心手动验证清单
 - [ ] 05-03: 完成 README/演示脚本/作品集说明等收尾物料
 
@@ -107,4 +107,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Knowledge Ingestion Experience | 3/3 | Complete | 2026-03-26 |
 | 3. Grounded Chat Core | 3/3 | Complete | 2026-03-26 |
 | 4. Sessions & Feedback Loop | 3/3 | Complete | 2026-03-26 |
-| 5. Reliability & Portfolio Finish | 0/3 | Not started | - |
+| 5. Reliability & Portfolio Finish | 1/3 | In progress | - |
