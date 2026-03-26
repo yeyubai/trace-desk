@@ -2,6 +2,7 @@ import type { ModelTier } from "@/features/chat/types/chat";
 import { getEnv } from "@/lib/env";
 import { getBailianClient, resolveBailianModel } from "@/services/ai/bailian";
 import {
+  buildRefusalAnswer,
   buildCitationsFromMatches,
   composeMockAnswer,
 } from "@/services/ai/compose-mock-answer";
@@ -126,8 +127,30 @@ export async function* streamGroundedAnswer(args: {
   }>;
 }): AsyncGenerator<GroundedAnswerStreamEvent> {
   const env = getEnv();
+  const citations = buildCitationsFromMatches({
+    knowledgeBaseId: args.knowledgeBaseId,
+    matches: args.matches,
+  });
 
-  if (args.matches.length === 0 || env.APP_AI_MODE !== "bailian" || !env.BAILIAN_API_KEY) {
+  if (args.matches.length === 0 || citations.length === 0) {
+    const refusal = buildRefusalAnswer();
+
+    for (const chunk of splitIntoChunks(refusal.answerMarkdown)) {
+      yield {
+        type: "delta",
+        chunk,
+      };
+    }
+
+    yield {
+      type: "complete",
+      ...refusal,
+    };
+
+    return;
+  }
+
+  if (env.APP_AI_MODE !== "bailian" || !env.BAILIAN_API_KEY) {
     const mockAnswer = composeMockAnswer({
       knowledgeBaseId: args.knowledgeBaseId,
       matches: args.matches,
@@ -148,10 +171,6 @@ export async function* streamGroundedAnswer(args: {
     return;
   }
 
-  const citations = buildCitationsFromMatches({
-    knowledgeBaseId: args.knowledgeBaseId,
-    matches: args.matches,
-  });
   const followups = buildFollowups(args.question);
   const client = getBailianClient();
   const stream = await client.chat.completions.create(
@@ -179,11 +198,22 @@ export async function* streamGroundedAnswer(args: {
     };
   }
 
+  const finalAnswerMarkdown = answerMarkdown.trim();
+
+  if (!finalAnswerMarkdown) {
+    const refusal = buildRefusalAnswer();
+
+    yield {
+      type: "complete",
+      ...refusal,
+    };
+
+    return;
+  }
+
   yield {
     type: "complete",
-    answerMarkdown:
-      answerMarkdown.trim() ||
-      "我拿到了模型响应，但没有得到有效内容，请稍后重试。",
+    answerMarkdown: finalAnswerMarkdown,
     citations,
     followups,
   };

@@ -8,6 +8,7 @@ import {
 } from "@/features/chat/server/build-chat-response";
 import {
   buildRecentConversationContext,
+  buildRetrievalQuery,
 } from "@/features/chat/server/build-chat-context";
 import type { ChatStreamEvent } from "@/features/chat/types/chat";
 import { streamGroundedAnswer } from "@/services/ai/generate-grounded-answer";
@@ -35,9 +36,14 @@ export async function POST(request: Request) {
     const draftAssistantMessage = buildAssistantDraftMessage(assistantMessageId);
     const currentSession = getChatSessionById(payload.sessionId);
     const recentMessages = currentSession?.messages ?? [];
+    const recentConversationContext = buildRecentConversationContext(recentMessages);
+    const retrievalQuery = buildRetrievalQuery({
+      question: payload.message,
+      recentMessages,
+    });
     const retrievedMatches = retrieveKnowledgeMatches({
       knowledgeBaseId: payload.knowledgeBaseId,
-      query: payload.message,
+      query: retrievalQuery,
     });
     const rerankedMatches = rerankKnowledgeMatches(retrievedMatches);
 
@@ -59,7 +65,7 @@ export async function POST(request: Request) {
             modelTier: payload.modelTier,
             question: payload.message,
             matches: rerankedMatches,
-            recentMessages: buildRecentConversationContext(recentMessages),
+            recentMessages: recentConversationContext,
           })) {
             if (request.signal.aborted) {
               controller.close();

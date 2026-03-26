@@ -2,6 +2,15 @@ import type { CitationItem } from "@/features/chat/types/chat";
 import type { SearchKnowledgeMatch } from "@/services/retrieval/search-knowledge-base";
 import { listSourceDocumentsByKnowledgeBaseId } from "@/services/db/mock-workbench-store";
 
+export function buildRefusalAnswer() {
+  return {
+    answerMarkdown:
+      "我没有在当前知识库里检索到足够可靠的依据，暂时不能直接回答这个问题。\n\n你可以换一个更贴近已导入内容的问法，或者先补充相关文档后再试。",
+    citations: [] as CitationItem[],
+    followups: ["换一个更具体的问法", "先补充相关文档再继续提问"],
+  };
+}
+
 export function buildCitationsFromMatches(args: {
   knowledgeBaseId: string;
   matches: SearchKnowledgeMatch[];
@@ -12,7 +21,7 @@ export function buildCitationsFromMatches(args: {
     .map((match) => {
       const source = sources.find((item) => item.id === match.sourceId);
 
-      if (!source) {
+      if (!source || source.retrievalStatus !== "retrievable") {
         return null;
       }
 
@@ -32,18 +41,17 @@ export function composeMockAnswer(args: {
   matches: SearchKnowledgeMatch[];
 }) {
   if (args.matches.length === 0) {
-    return {
-      answerMarkdown:
-        "我没有在当前知识库里检索到足够可靠的依据，暂时不能直接回答这个问题。\n\n你可以换一个更贴近 **导入、引用、拒答、评测** 的问法，或者先补充相关文档后再试。",
-      citations: [] as CitationItem[],
-      followups: ["现在有哪些导入状态需要建模？", "引用区域应该展示哪些字段？"],
-    };
+    return buildRefusalAnswer();
   }
 
   const citations = buildCitationsFromMatches({
     knowledgeBaseId: args.knowledgeBaseId,
     matches: args.matches,
   });
+
+  if (citations.length === 0) {
+    return buildRefusalAnswer();
+  }
 
   const evidenceLines = citations.map(
     (citation) =>

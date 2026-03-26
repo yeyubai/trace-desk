@@ -1,7 +1,9 @@
 import type {
   ChatMessage,
+  ChatSession,
   SendChatMessageInput,
 } from "@/features/chat/types/chat";
+import { buildRetrievalQuery } from "@/features/chat/server/build-chat-context";
 import { generateGroundedAnswer } from "@/services/ai/generate-grounded-answer";
 import {
   retrieveKnowledgeMatches,
@@ -95,10 +97,15 @@ export function buildAssistantMessage(args: {
 export async function buildChatResponse(
   payload: SendChatMessageInput,
   ids?: BuildMessageIds,
+  recentMessages: ChatSession["messages"] = [],
 ) {
+  const retrievalQuery = buildRetrievalQuery({
+    question: payload.message,
+    recentMessages,
+  });
   const retrievedMatches = retrieveKnowledgeMatches({
     knowledgeBaseId: payload.knowledgeBaseId,
-    query: payload.message,
+    query: retrievalQuery,
   });
 
   const rerankedMatches = rerankKnowledgeMatches(retrievedMatches);
