@@ -1,11 +1,22 @@
 import type { CitationItem } from "@/features/chat/types/chat";
-import type { SearchKnowledgeMatch } from "@/services/retrieval/search-knowledge-base";
+import type {
+  RetrievalDiagnostics,
+  SearchKnowledgeMatch,
+} from "@/services/retrieval/search-knowledge-base";
 import { listSourceDocumentsByKnowledgeBaseId } from "@/services/db/mock-workbench-store";
 
-export function buildRefusalAnswer() {
+export function buildRefusalAnswer(diagnostics?: RetrievalDiagnostics) {
+  const hints = diagnostics?.notes ?? [];
+
   return {
-    answerMarkdown:
-      "我没有在当前知识库里检索到足够可靠的依据，暂时不能直接回答这个问题。\n\n你可以换一个更贴近已导入内容的问法，或者先补充相关文档后再试。",
+    answerMarkdown: [
+      "我没有在当前知识库里检索到足够可靠的依据，暂时不能直接回答这个问题。",
+      "",
+      ...(hints.length > 0
+        ? ["当前诊断：", ...hints.map((hint) => `- ${hint}`), ""]
+        : []),
+      "你可以换一个更贴近已导入内容的问法，或者先补充相关文档后再试。",
+    ].join("\n"),
     citations: [] as CitationItem[],
     followups: ["换一个更具体的问法", "先补充相关文档再继续提问"],
   };
@@ -39,9 +50,10 @@ export function buildCitationsFromMatches(args: {
 export function composeMockAnswer(args: {
   knowledgeBaseId: string;
   matches: SearchKnowledgeMatch[];
+  diagnostics?: RetrievalDiagnostics;
 }) {
   if (args.matches.length === 0) {
-    return buildRefusalAnswer();
+    return buildRefusalAnswer(args.diagnostics);
   }
 
   const citations = buildCitationsFromMatches({
@@ -50,7 +62,7 @@ export function composeMockAnswer(args: {
   });
 
   if (citations.length === 0) {
-    return buildRefusalAnswer();
+    return buildRefusalAnswer(args.diagnostics);
   }
 
   const evidenceLines = citations.map(

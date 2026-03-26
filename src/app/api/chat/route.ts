@@ -17,6 +17,7 @@ import {
   getChatSessionById,
 } from "@/services/db/mock-workbench-store";
 import {
+  buildRetrievalDiagnostics,
   retrieveKnowledgeMatches,
   rerankKnowledgeMatches,
 } from "@/services/retrieval/search-knowledge-base";
@@ -46,6 +47,11 @@ export async function POST(request: Request) {
       query: retrievalQuery,
     });
     const rerankedMatches = rerankKnowledgeMatches(retrievedMatches);
+    const retrievalDiagnostics = buildRetrievalDiagnostics({
+      knowledgeBaseId: payload.knowledgeBaseId,
+      query: retrievalQuery,
+      matchedChunkCount: rerankedMatches.length,
+    });
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -65,6 +71,7 @@ export async function POST(request: Request) {
             modelTier: payload.modelTier,
             question: payload.message,
             matches: rerankedMatches,
+            diagnostics: retrievalDiagnostics,
             recentMessages: recentConversationContext,
           })) {
             if (request.signal.aborted) {

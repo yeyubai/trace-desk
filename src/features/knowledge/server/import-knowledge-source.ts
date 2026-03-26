@@ -4,8 +4,8 @@ import type {
   SourceDocumentKind,
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
+import { splitSourceWithLangChain } from "@/services/rag/langchain-splitting";
 
-const MAX_CHUNK_LENGTH = 320;
 const MAX_KEYWORD_COUNT = 24;
 
 function buildChunk(input: {
@@ -101,17 +101,6 @@ function htmlToText(value: string) {
       .replace(/<\/(p|div|section|article|main|li|ul|ol|h1|h2|h3|h4|h5|h6|table|tr)>/gi, "\n")
       .replace(/<(p|div|section|article|main|li|ul|ol|h1|h2|h3|h4|h5|h6|table|tr)\b[^>]*>/gi, "\n"),
   );
-}
-
-function splitLongParagraph(value: string) {
-  const sentenceMatches =
-    value.match(/[^。！？.!?；;\n]+[。！？.!?；;]?/g)?.map((item) => item.trim()) ?? [];
-
-  if (sentenceMatches.length === 0) {
-    return [value];
-  }
-
-  return sentenceMatches;
 }
 
 function buildExcerpt(value: string) {
@@ -217,11 +206,15 @@ function buildSearchKeywords(input: { text: string; seedKeywords?: string[] }) {
   return keywords.slice(0, MAX_KEYWORD_COUNT);
 }
 
-function buildChunksFromText(input: {
+async function buildChunksFromText(input: {
   knowledgeBaseId: string;
   sourceId: string;
   text: string;
   seedKeywords?: string[];
+  title: string;
+  kind: SourceDocumentKind | "plain";
+  extractionMode: string;
+  sourceUrl?: string;
 }) {
   const normalizedText = normalizeText(input.text);
 
@@ -229,54 +222,22 @@ function buildChunksFromText(input: {
     return [];
   }
 
-  const segments = normalizedText
-    .split(/\n{2,}/)
-    .flatMap((paragraph) => {
-      const trimmed = paragraph.trim();
+  const langChainChunks = await splitSourceWithLangChain({
+    text: normalizedText,
+    title: input.title,
+    kind: input.kind,
+    extractionMode: input.extractionMode,
+    sourceUrl: input.sourceUrl,
+  });
 
-      if (!trimmed) {
-        return [];
-      }
-
-      return trimmed.length > MAX_CHUNK_LENGTH
-        ? splitLongParagraph(trimmed)
-        : [trimmed];
-    })
-    .filter(Boolean);
-
-  const chunkTexts: string[] = [];
-  let current = "";
-
-  for (const segment of segments) {
-    const candidate = current ? `${current}\n${segment}` : segment;
-
-    if (candidate.length <= MAX_CHUNK_LENGTH) {
-      current = candidate;
-      continue;
-    }
-
-    if (current) {
-      chunkTexts.push(current);
-    }
-
-    current =
-      segment.length > MAX_CHUNK_LENGTH
-        ? segment.slice(0, MAX_CHUNK_LENGTH)
-        : segment;
-  }
-
-  if (current) {
-    chunkTexts.push(current);
-  }
-
-  return chunkTexts.map((content) =>
+  return langChainChunks.map((chunk) =>
     buildChunk({
       knowledgeBaseId: input.knowledgeBaseId,
       sourceId: input.sourceId,
-      excerpt: buildExcerpt(content),
-      content,
+      excerpt: buildExcerpt(chunk.content),
+      content: chunk.content,
       keywords: buildSearchKeywords({
-        text: content,
+        text: chunk.content,
         seedKeywords: input.seedKeywords,
       }),
     }),
@@ -384,11 +345,15 @@ export async function createImportedUrlSource(input: ImportUrlInput) {
     input.title?.trim() ||
     urlDocument.title ||
     `${parsedUrl.hostname}${parsedUrl.pathname === "/" ? "" : parsedUrl.pathname}`;
-  const chunks = buildChunksFromText({
+  const chunks = await buildChunksFromText({
     knowledgeBaseId: input.knowledgeBaseId,
     sourceId,
     text: urlDocument.text,
     seedKeywords: ["网页", "网页导入", parsedUrl.hostname, title],
+    title,
+    kind: "url",
+    extractionMode: urlDocument.extractionMode,
+    sourceUrl: input.url,
   });
   const status = chunks.length > 0 ? "available" : "failed";
   const retrievalStatus = chunks.length > 0 ? "retrievable" : "unavailable";
@@ -470,11 +435,14 @@ export async function createUploadedFileSource(input: {
   const rawContent = input.fileContent?.trim() ?? "";
   const normalizedContent =
     kind === "markdown" ? stripMarkdown(rawContent) : normalizeText(rawContent);
-  const chunks = buildChunksFromText({
+  const chunks = await buildChunksFromText({
     knowledgeBaseId: input.knowledgeBaseId,
     sourceId,
     text: normalizedContent,
     seedKeywords: ["文件", "上传", input.fileName, kind],
+    title: input.fileName,
+    kind,
+    extractionMode: kind === "markdown" ? "markdown-stripped" : "plain-text",
   });
   const status = chunks.length > 0 ? "available" : "failed";
   const retrievalStatus = chunks.length > 0 ? "retrievable" : "unavailable";

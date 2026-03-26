@@ -6,7 +6,10 @@ import {
   buildCitationsFromMatches,
   composeMockAnswer,
 } from "@/services/ai/compose-mock-answer";
-import type { SearchKnowledgeMatch } from "@/services/retrieval/search-knowledge-base";
+import type {
+  RetrievalDiagnostics,
+  SearchKnowledgeMatch,
+} from "@/services/retrieval/search-knowledge-base";
 
 function buildFollowups(question: string) {
   return [
@@ -121,6 +124,7 @@ export async function* streamGroundedAnswer(args: {
   modelTier: ModelTier;
   question: string;
   matches: SearchKnowledgeMatch[];
+  diagnostics?: RetrievalDiagnostics;
   recentMessages?: Array<{
     role: "user" | "assistant";
     content: string;
@@ -133,7 +137,7 @@ export async function* streamGroundedAnswer(args: {
   });
 
   if (args.matches.length === 0 || citations.length === 0) {
-    const refusal = buildRefusalAnswer();
+    const refusal = buildRefusalAnswer(args.diagnostics);
 
     for (const chunk of splitIntoChunks(refusal.answerMarkdown)) {
       yield {
@@ -154,6 +158,7 @@ export async function* streamGroundedAnswer(args: {
     const mockAnswer = composeMockAnswer({
       knowledgeBaseId: args.knowledgeBaseId,
       matches: args.matches,
+      diagnostics: args.diagnostics,
     });
 
     for (const chunk of splitIntoChunks(mockAnswer.answerMarkdown)) {
@@ -201,7 +206,7 @@ export async function* streamGroundedAnswer(args: {
   const finalAnswerMarkdown = answerMarkdown.trim();
 
   if (!finalAnswerMarkdown) {
-    const refusal = buildRefusalAnswer();
+    const refusal = buildRefusalAnswer(args.diagnostics);
 
     yield {
       type: "complete",
