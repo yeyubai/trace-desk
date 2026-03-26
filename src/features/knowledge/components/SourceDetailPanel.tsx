@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, FileText, Quote, Rows3, Tag } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ExternalLink,
+  FileSearch,
+  FileText,
+  Quote,
+  Rows3,
+  Tag,
+} from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,6 +109,74 @@ export function SourceDetailPanel({
               <p className="mt-3 text-sm leading-7 text-muted">{excerpt}</p>
             </div>
           ) : null}
+
+          <div className="rounded-[1.3rem] border border-line bg-panel-strong p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <FileSearch className="size-4 text-accent-strong" />
+              导入诊断
+            </div>
+            <div className="mt-3 grid gap-3 text-sm">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="neutral">抽取策略: {source.diagnostics.extractionMode}</Badge>
+                <Badge variant="neutral">
+                  正文 {source.diagnostics.extractedTextLength} 字
+                </Badge>
+                <Badge
+                  variant={
+                    source.diagnostics.contentQuality === "strong"
+                      ? "accent"
+                      : "warning"
+                  }
+                >
+                  {source.diagnostics.contentQuality === "strong"
+                    ? "正文充足"
+                    : source.diagnostics.contentQuality === "thin"
+                      ? "正文偏薄"
+                      : "正文缺失"}
+                </Badge>
+              </div>
+
+              {source.diagnostics.warnings.length > 0 ? (
+                <div className="rounded-[1.15rem] border border-warning/20 bg-warning-soft p-3 text-xs leading-6 text-warning">
+                  <div className="flex items-center gap-2 font-medium">
+                    <AlertTriangle className="size-4" />
+                    诊断告警
+                  </div>
+                  <ul className="mt-2 list-disc pl-5">
+                    {source.diagnostics.warnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {source.diagnostics.chunkPreviews.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-xs font-medium tracking-[0.16em] text-muted uppercase">
+                    Chunk Preview
+                  </p>
+                  {source.diagnostics.chunkPreviews.map((chunk) => (
+                    <div
+                      key={chunk.id}
+                      className="rounded-[1.1rem] border border-line bg-white/70 p-3"
+                    >
+                      <p className="text-sm leading-6 text-foreground">{chunk.excerpt}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {chunk.keywordPreview.map((keyword) => (
+                          <span
+                            key={keyword}
+                            className="rounded-full border border-line px-2.5 py-1 text-[11px] text-muted"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
 
           <div className="rounded-[1.3rem] border border-line bg-panel-strong p-4 text-sm text-muted">
             {source.retrievalStatus === "retrievable"

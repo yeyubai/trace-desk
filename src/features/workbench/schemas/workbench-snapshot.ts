@@ -5,6 +5,7 @@ const messageRoleSchema = z.enum(["user", "assistant"]);
 const sourceDocumentKindSchema = z.enum(["pdf", "markdown", "txt", "url"]);
 const sourceDocumentStatusSchema = z.enum(["available", "indexing", "failed"]);
 const sourceRetrievalStatusSchema = z.enum(["retrievable", "stored_only", "unavailable"]);
+const sourceContentQualitySchema = z.enum(["strong", "thin", "empty"]);
 const runtimeServiceStatusSchema = z.enum(["mock", "configured", "missing"]);
 
 const citationItemSchema = z.object({
@@ -79,6 +80,19 @@ const sourceDocumentSummarySchema = z.object({
   chunkCount: z.number().int().nonnegative(),
   citationLabel: z.string().trim().min(1),
   url: z.string().trim().url().optional(),
+  diagnostics: z.object({
+    extractionMode: z.string().trim().min(1),
+    extractedTextLength: z.number().int().nonnegative(),
+    contentQuality: sourceContentQualitySchema,
+    warnings: z.array(z.string().trim().min(1)),
+    chunkPreviews: z.array(
+      z.object({
+        id: z.string().trim().min(1),
+        excerpt: z.string().trim().min(1),
+        keywordPreview: z.array(z.string().trim().min(1)),
+      }),
+    ),
+  }),
   duplicateOf: z
     .object({
       sourceId: z.string().trim().min(1),

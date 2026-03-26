@@ -7,6 +7,7 @@ import type {
   ModelTier,
 } from "@/features/chat/types/chat";
 import type {
+  SourceContentQuality,
   KnowledgeBaseOverview,
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
@@ -122,6 +123,24 @@ function createSeedState(): MockWorkbenchState {
       updatedAt: thirtyMinutesAgo,
       chunkCount: 2,
       citationLabel: "[RAG-1]",
+      diagnostics: {
+        extractionMode: "markdown-seed",
+        extractedTextLength: 82,
+        contentQuality: "strong",
+        warnings: [],
+        chunkPreviews: [
+          {
+            id: "chunk-rag-1",
+            excerpt: "所有知识库回答必须展示来源引用；未命中时必须明确拒答。",
+            keywordPreview: ["引用", "拒答", "知识库", "依据"],
+          },
+          {
+            id: "chunk-rag-2",
+            excerpt: "检索、重排、生成、引用组装应拆成显式步骤。",
+            keywordPreview: ["检索", "重排", "引用组装", "显式步骤"],
+          },
+        ],
+      },
       duplicateOf: null,
     },
     {
@@ -136,6 +155,24 @@ function createSeedState(): MockWorkbenchState {
       updatedAt: sixHoursAgo,
       chunkCount: 2,
       citationLabel: "[CHAT-2]",
+      diagnostics: {
+        extractionMode: "text-seed",
+        extractedTextLength: 78,
+        contentQuality: "strong",
+        warnings: [],
+        chunkPreviews: [
+          {
+            id: "chunk-chat-1",
+            excerpt: "聊天消息统一按 parts 设计，不直接依赖单一 content 字段。",
+            keywordPreview: ["parts", "消息结构", "text", "citations"],
+          },
+          {
+            id: "chunk-chat-2",
+            excerpt: "流式输出、工具状态和失败状态都要有显式状态建模。",
+            keywordPreview: ["流式", "工具状态", "失败状态", "状态"],
+          },
+        ],
+      },
       duplicateOf: null,
     },
     {
@@ -150,6 +187,13 @@ function createSeedState(): MockWorkbenchState {
       updatedAt: ninetyMinutesAgo,
       chunkCount: 0,
       citationLabel: "[FILE-DRAFT]",
+      diagnostics: {
+        extractionMode: "pdf-unparsed",
+        extractedTextLength: 0,
+        contentQuality: "empty",
+        warnings: ["当前版本尚未解析 PDF 正文。"],
+        chunkPreviews: [],
+      },
       duplicateOf: null,
     },
     {
@@ -165,6 +209,19 @@ function createSeedState(): MockWorkbenchState {
       chunkCount: 1,
       citationLabel: "[EVAL-3]",
       url: "https://example.com/reports/weekly-eval",
+      diagnostics: {
+        extractionMode: "url-seed",
+        extractedTextLength: 46,
+        contentQuality: "thin",
+        warnings: ["正文偏短，可能只抓到了摘要、导航或局部内容。"],
+        chunkPreviews: [
+          {
+            id: "chunk-eval-1",
+            excerpt: "评测优先检查引用准确性、拒答一致性和多轮追问体验。",
+            keywordPreview: ["评测", "引用准确性", "拒答一致性", "模型切换"],
+          },
+        ],
+      },
       duplicateOf: null,
     },
     {
@@ -180,6 +237,13 @@ function createSeedState(): MockWorkbenchState {
       chunkCount: 0,
       citationLabel: "[URL-PEND]",
       url: "https://example.com/onboarding",
+      diagnostics: {
+        extractionMode: "pending",
+        extractedTextLength: 0,
+        contentQuality: "empty",
+        warnings: ["网页仍在处理中，暂时还没有正文分块。"],
+        chunkPreviews: [],
+      },
       duplicateOf: null,
     },
   ];
@@ -313,11 +377,88 @@ function ensureStateFile() {
   }
 }
 
+function inferContentQuality(extractedTextLength: number, chunkCount: number): SourceContentQuality {
+  if (extractedTextLength <= 0 || chunkCount === 0) {
+    return "empty";
+  }
+
+  if (extractedTextLength < 600 || chunkCount < 2) {
+    return "thin";
+  }
+
+  return "strong";
+}
+
+function buildFallbackDiagnostics(
+  source: SourceDocumentSummary,
+  chunks: SourceChunkRecord[],
+) {
+  const extractedTextLength = chunks.reduce((total, chunk) => total + chunk.content.length, 0);
+  const contentQuality = inferContentQuality(extractedTextLength, chunks.length);
+  const warnings: string[] = [];
+
+  if (source.kind === "pdf") {
+    warnings.push("当前版本尚未解析 PDF 正文。");
+  } else if (contentQuality === "thin") {
+    warnings.push("正文偏短，可能只抓到了摘要、导航或局部内容。");
+  } else if (contentQuality === "empty") {
+    warnings.push("当前没有提取到足够正文，无法支撑可靠检索。");
+  }
+
+  return {
+    extractionMode:
+      source.kind === "pdf"
+        ? "pdf-unparsed"
+        : source.kind === "url"
+          ? "legacy-url"
+          : source.kind === "markdown"
+            ? "markdown-stripped"
+            : "plain-text",
+    extractedTextLength,
+    contentQuality,
+    warnings,
+    chunkPreviews: chunks.slice(0, 3).map((chunk) => ({
+      id: chunk.id,
+      excerpt: chunk.excerpt,
+      keywordPreview: chunk.keywords.slice(0, 6),
+    })),
+  };
+}
+
+function hydrateState(state: MockWorkbenchState): MockWorkbenchState {
+  return {
+    ...state,
+    sources: state.sources.map((source) => {
+      if ("diagnostics" in source && source.diagnostics) {
+        return source;
+      }
+
+      const chunks = state.sourceChunks.filter((chunk) => chunk.sourceId === source.id);
+
+      return {
+        ...source,
+        diagnostics: buildFallbackDiagnostics(source, chunks),
+      };
+    }),
+    feedbackEntries: state.feedbackEntries.map((entry) => ({
+      ...entry,
+      updatedAt: entry.updatedAt ?? new Date().toISOString(),
+    })),
+  };
+}
+
 function readState(): MockWorkbenchState {
   ensureStateFile();
 
   const raw = fs.readFileSync(MOCK_STATE_FILE, "utf-8");
-  return JSON.parse(raw) as MockWorkbenchState;
+  const parsed = JSON.parse(raw) as MockWorkbenchState;
+  const hydrated = hydrateState(parsed);
+
+  if (JSON.stringify(parsed) !== JSON.stringify(hydrated)) {
+    writeState(hydrated);
+  }
+
+  return hydrated;
 }
 
 function writeState(nextState: MockWorkbenchState) {

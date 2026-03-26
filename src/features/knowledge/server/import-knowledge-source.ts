@@ -1,5 +1,6 @@
 import type {
   ImportUrlInput,
+  SourceContentQuality,
   SourceDocumentKind,
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
@@ -93,6 +94,15 @@ function stripHtml(value: string) {
   );
 }
 
+function htmlToText(value: string) {
+  return stripHtml(
+    value
+      .replace(/<(br|hr)\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|section|article|main|li|ul|ol|h1|h2|h3|h4|h5|h6|table|tr)>/gi, "\n")
+      .replace(/<(p|div|section|article|main|li|ul|ol|h1|h2|h3|h4|h5|h6|table|tr)\b[^>]*>/gi, "\n"),
+  );
+}
+
 function splitLongParagraph(value: string) {
   const sentenceMatches =
     value.match(/[^。！？.!?；;\n]+[。！？.!?；;]?/g)?.map((item) => item.trim()) ?? [];
@@ -106,6 +116,60 @@ function splitLongParagraph(value: string) {
 
 function buildExcerpt(value: string) {
   return value.length > 96 ? `${value.slice(0, 96).trim()}...` : value;
+}
+
+function extractHtmlBlocks(value: string, pattern: RegExp) {
+  return [...value.matchAll(pattern)].map((match) => match[1] ?? "");
+}
+
+function getContentQuality(args: { extractedTextLength: number; chunkCount: number }): SourceContentQuality {
+  if (args.extractedTextLength <= 0 || args.chunkCount === 0) {
+    return "empty";
+  }
+
+  if (args.extractedTextLength < 600 || args.chunkCount < 2) {
+    return "thin";
+  }
+
+  return "strong";
+}
+
+function buildDiagnostics(args: {
+  extractionMode: string;
+  extractedText: string;
+  chunks: Array<{
+    id: string;
+    excerpt: string;
+    keywords: string[];
+  }>;
+  warnings?: string[];
+}) {
+  const extractedTextLength = args.extractedText.length;
+  const contentQuality = getContentQuality({
+    extractedTextLength,
+    chunkCount: args.chunks.length,
+  });
+  const warnings = [...(args.warnings ?? [])];
+
+  if (contentQuality === "thin") {
+    warnings.push("正文偏短，可能只抓到了摘要、导航或局部内容。");
+  }
+
+  if (contentQuality === "empty") {
+    warnings.push("当前没有提取到足够正文，无法支撑可靠检索。");
+  }
+
+  return {
+    extractionMode: args.extractionMode,
+    extractedTextLength,
+    contentQuality,
+    warnings,
+    chunkPreviews: args.chunks.slice(0, 3).map((chunk) => ({
+      id: chunk.id,
+      excerpt: chunk.excerpt,
+      keywordPreview: chunk.keywords.slice(0, 6),
+    })),
+  };
 }
 
 function buildSearchKeywords(input: { text: string; seedKeywords?: string[] }) {
@@ -246,10 +310,50 @@ async function fetchUrlDocument(url: string) {
   const html = await response.text();
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const bodyHtml = bodyMatch?.[1] ?? html;
+  const articleCandidates = extractHtmlBlocks(
+    bodyHtml,
+    /<article\b[^>]*>([\s\S]*?)<\/article>/gi,
+  );
+  const mainCandidates = extractHtmlBlocks(
+    bodyHtml,
+    /<main\b[^>]*>([\s\S]*?)<\/main>/gi,
+  );
+  const semanticCandidates = extractHtmlBlocks(
+    bodyHtml,
+    /<(section|div)\b[^>]*(?:id|class)=["'][^"']*(article|content|post|entry|rich-text|markdown-body|doc-body|story-body|page-content)[^"']*["'][^>]*>([\s\S]*?)<\/\1>/gi,
+  );
+
+  const candidatePool = [
+    ...articleCandidates.map((candidate) => ({
+      mode: "article",
+      text: htmlToText(candidate),
+    })),
+    ...mainCandidates.map((candidate) => ({
+      mode: "main",
+      text: htmlToText(candidate),
+    })),
+    ...semanticCandidates.map((candidate) => ({
+      mode: "content-container",
+      text: htmlToText(candidate),
+    })),
+  ].filter((candidate) => candidate.text.length > 0);
+
+  const bestCandidate =
+    candidatePool.sort((left, right) => right.text.length - left.text.length)[0] ?? null;
+  const fallbackText = htmlToText(bodyHtml);
+  const useCandidate = bestCandidate && bestCandidate.text.length >= Math.max(280, fallbackText.length * 0.35);
+  const warnings: string[] = [];
+
+  if (!useCandidate) {
+    warnings.push("正文抽取回退到了整个 body，可能包含导航、页脚或非正文噪音。");
+  }
 
   return {
     title: titleMatch ? normalizeText(decodeHtmlEntities(titleMatch[1])) : "",
-    text: stripHtml(bodyMatch?.[1] ?? html),
+    text: useCandidate ? bestCandidate.text : fallbackText,
+    extractionMode: useCandidate ? bestCandidate.mode : "body-fallback",
+    warnings,
   };
 }
 
@@ -310,6 +414,12 @@ export async function createImportedUrlSource(input: ImportUrlInput) {
       chunkCount: chunks.length,
       citationLabel: buildUrlCitationLabel(title),
       url: input.url,
+      diagnostics: buildDiagnostics({
+        extractionMode: urlDocument.extractionMode,
+        extractedText: urlDocument.text,
+        chunks,
+        warnings: urlDocument.warnings,
+      }),
       duplicateOf: null,
     } satisfies SourceDocumentSummary,
     chunks,
@@ -345,6 +455,12 @@ export async function createUploadedFileSource(input: {
         updatedAt,
         chunkCount: 0,
         citationLabel: buildFileCitationLabel(input.fileName),
+        diagnostics: buildDiagnostics({
+          extractionMode: "pdf-unparsed",
+          extractedText: "",
+          chunks: [],
+          warnings: ["当前版本尚未解析 PDF 正文。"],
+        }),
         duplicateOf: null,
       } satisfies SourceDocumentSummary,
       chunks: [],
@@ -383,6 +499,11 @@ export async function createUploadedFileSource(input: {
       updatedAt,
       chunkCount: chunks.length,
       citationLabel: buildFileCitationLabel(input.fileName),
+      diagnostics: buildDiagnostics({
+        extractionMode: kind === "markdown" ? "markdown-stripped" : "plain-text",
+        extractedText: normalizedContent,
+        chunks,
+      }),
       duplicateOf: null,
     } satisfies SourceDocumentSummary,
     chunks,

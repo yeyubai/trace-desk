@@ -2,6 +2,21 @@ export type SourceDocumentKind = "pdf" | "markdown" | "txt" | "url";
 
 export type SourceDocumentStatus = "available" | "indexing" | "failed";
 export type SourceRetrievalStatus = "retrievable" | "stored_only" | "unavailable";
+export type SourceContentQuality = "strong" | "thin" | "empty";
+
+export type SourceChunkPreview = {
+  id: string;
+  excerpt: string;
+  keywordPreview: string[];
+};
+
+export type SourceDiagnostics = {
+  extractionMode: string;
+  extractedTextLength: number;
+  contentQuality: SourceContentQuality;
+  warnings: string[];
+  chunkPreviews: SourceChunkPreview[];
+};
 
 export type KnowledgeBaseOverview = {
   id: string;
@@ -27,6 +42,7 @@ export type SourceDocumentSummary = {
   chunkCount: number;
   citationLabel: string;
   url?: string;
+  diagnostics: SourceDiagnostics;
   duplicateOf?: {
     sourceId: string;
     title: string;
