@@ -12,17 +12,17 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 Current Phase: 5
 Current Phase Name: Reliability & Portfolio Finish
 Total Phases: 5
-Current Plan: 1
+Current Plan: 2
 Total Plans in Phase: 3
 Status: In progress
-Last Activity: 2026-03-26 — Completed Phase 5 plan 05-01 and added import diagnostics for RAG verification
-Last Activity Description: URL import now exposes extraction mode, text length, chunk previews, and warnings; next step is 05-02.
-Progress: 87%
+Last Activity: 2026-03-26 — Completed Phase 5 plan 05-02 and introduced LangChain-based chunking
+Last Activity Description: Retrieval now uses diagnostics-aware quality rules and refusal hints; next step is 05-03.
+Progress: 93%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: session-based
 - Total execution time: session-based
 
@@ -34,10 +34,10 @@ Progress: 87%
 | 2 | 3 | session-based | session-based |
 | 3 | 3 | session-based | session-based |
 | 4 | 3 | session-based | session-based |
-| 5 | 1 | session-based | session-based |
+| 5 | 2 | session-based | session-based |
 
 **Recent Trend:**
-- Last 5 plans: 03-02, 03-03, 04-01, 04-02/03, 05-01
+- Last 5 plans: 03-03, 04-01, 04-02/03, 05-01, 05-02
 - Trend: Improving
 
 ## Decisions Made
@@ -62,6 +62,7 @@ Progress: 87%
 | 4 | Persist mock workbench state to disk | In-memory state was not reliable across requests, breaking feedback/session verification |
 | 4 | Use Sessions page as a conversation console | History list, session summary, followups, and continue action belong together |
 | 5 | Add extraction diagnostics to imported sources | RAG reliability requires import-stage observability, not just downstream refusal |
+| 5 | Introduce LangChain from the chunking layer | It is the safest first slice to move the stack from demo logic toward an enterprise RAG workflow |
 
 ## Pending Todos
 
@@ -74,6 +75,6 @@ Progress: 87%
 
 ## Session
 
-Last Date: 2026-03-26 16:00
-Stopped At: Phase 5 plan 05-01 completed with import diagnostics and URL extraction verification; next recommended command is to continue Phase 5 execution
+Last Date: 2026-03-26 23:20
+Stopped At: Phase 5 plan 05-02 completed with LangChain chunking and retrieval quality rules; next recommended command is to continue Phase 5 execution
 Resume File: None
