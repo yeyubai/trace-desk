@@ -1,5 +1,6 @@
 import { formatCompactNumber } from "@/lib/formatters";
 import { getRuntimeOverview } from "@/features/runtime/server/get-runtime-overview";
+import { parseWorkbenchSnapshot } from "@/features/workbench/schemas/workbench-snapshot";
 import {
   getKnowledgeBaseOverview,
   listResponseFeedback,
@@ -20,7 +21,7 @@ export function getWorkbenchSnapshot(): WorkbenchSnapshot {
     (entry) => entry.rating === "thumbs_down",
   ).length;
 
-  return {
+  return parseWorkbenchSnapshot({
     knowledgeBase,
     activeSessionId: sessions[0]?.id ?? "",
     sessions,
@@ -56,5 +57,5 @@ export function getWorkbenchSnapshot(): WorkbenchSnapshot {
       positive,
       negative,
     },
-  };
+  });
 }

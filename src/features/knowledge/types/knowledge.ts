@@ -1,6 +1,7 @@
 export type SourceDocumentKind = "pdf" | "markdown" | "txt" | "url";
 
 export type SourceDocumentStatus = "available" | "indexing" | "failed";
+export type SourceRetrievalStatus = "retrievable" | "stored_only" | "unavailable";
 
 export type KnowledgeBaseOverview = {
   id: string;
@@ -19,11 +20,17 @@ export type SourceDocumentSummary = {
   title: string;
   kind: SourceDocumentKind;
   status: SourceDocumentStatus;
+  retrievalStatus: SourceRetrievalStatus;
+  retrievalDetail: string;
   summary: string;
   updatedAt: string;
   chunkCount: number;
   citationLabel: string;
   url?: string;
+  duplicateOf?: {
+    sourceId: string;
+    title: string;
+  } | null;
 };
 
 export type ImportUrlInput = {

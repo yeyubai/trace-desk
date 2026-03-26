@@ -4,6 +4,9 @@ import type {
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
 
+const MAX_CHUNK_LENGTH = 320;
+const MAX_KEYWORD_COUNT = 24;
+
 function buildChunk(input: {
   knowledgeBaseId: string;
   sourceId: string;
@@ -18,6 +21,235 @@ function buildChunk(input: {
     excerpt: input.excerpt,
     content: input.content,
     keywords: input.keywords,
+  };
+}
+
+function normalizeText(value: string) {
+  return value
+    .replace(/\r/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function decodeHtmlEntities(value: string) {
+  const namedEntities: Record<string, string> = {
+    "&nbsp;": " ",
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&ldquo;": '"',
+    "&rdquo;": '"',
+    "&lsquo;": "'",
+    "&rsquo;": "'",
+    "&mdash;": "-",
+    "&ndash;": "-",
+    "&hellip;": "...",
+  };
+
+  return value
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) =>
+      String.fromCodePoint(Number.parseInt(code, 16)),
+    )
+    .replace(
+      /&(nbsp|amp|lt|gt|quot|#39|ldquo|rdquo|lsquo|rsquo|mdash|ndash|hellip);/g,
+      (entity) => namedEntities[entity] ?? entity,
+    );
+}
+
+function stripMarkdown(value: string) {
+  return normalizeText(
+    value
+      .replace(/```[\s\S]*?```/g, (block) =>
+        block.replace(/```[^\n]*\n?/g, "").replace(/```/g, ""),
+      )
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/^>\s?/gm, "")
+      .replace(/^[-*+]\s+/gm, "")
+      .replace(/^\d+\.\s+/gm, "")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/_([^_]+)_/g, "$1"),
+  );
+}
+
+function stripHtml(value: string) {
+  return normalizeText(
+    decodeHtmlEntities(
+      value
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+        .replace(/<!--[\s\S]*?-->/g, " ")
+        .replace(/<[^>]+>/g, " "),
+    ),
+  );
+}
+
+function splitLongParagraph(value: string) {
+  const sentenceMatches =
+    value.match(/[^。！？.!?；;\n]+[。！？.!?；;]?/g)?.map((item) => item.trim()) ?? [];
+
+  if (sentenceMatches.length === 0) {
+    return [value];
+  }
+
+  return sentenceMatches;
+}
+
+function buildExcerpt(value: string) {
+  return value.length > 96 ? `${value.slice(0, 96).trim()}...` : value;
+}
+
+function buildSearchKeywords(input: { text: string; seedKeywords?: string[] }) {
+  const keywords: string[] = [];
+  const seen = new Set<string>();
+
+  const pushKeyword = (value: string) => {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized.length < 2 || seen.has(normalized)) {
+      return;
+    }
+
+    seen.add(normalized);
+    keywords.push(normalized);
+  };
+
+  for (const seedKeyword of input.seedKeywords ?? []) {
+    pushKeyword(seedKeyword);
+  }
+
+  const normalizedText = input.text.toLowerCase();
+  const latinMatches = normalizedText.match(/[a-z0-9][a-z0-9._/-]{1,31}/g) ?? [];
+
+  for (const item of latinMatches) {
+    pushKeyword(item);
+  }
+
+  const hanMatches = normalizedText.match(/[\u4e00-\u9fff]{2,}/g) ?? [];
+
+  for (const item of hanMatches) {
+    if (item.length <= 8) {
+      pushKeyword(item);
+    }
+
+    for (let index = 0; index < item.length - 1; index += 1) {
+      pushKeyword(item.slice(index, index + 2));
+    }
+
+    for (let index = 0; index < item.length - 2; index += 1) {
+      pushKeyword(item.slice(index, index + 3));
+    }
+  }
+
+  return keywords.slice(0, MAX_KEYWORD_COUNT);
+}
+
+function buildChunksFromText(input: {
+  knowledgeBaseId: string;
+  sourceId: string;
+  text: string;
+  seedKeywords?: string[];
+}) {
+  const normalizedText = normalizeText(input.text);
+
+  if (!normalizedText) {
+    return [];
+  }
+
+  const segments = normalizedText
+    .split(/\n{2,}/)
+    .flatMap((paragraph) => {
+      const trimmed = paragraph.trim();
+
+      if (!trimmed) {
+        return [];
+      }
+
+      return trimmed.length > MAX_CHUNK_LENGTH
+        ? splitLongParagraph(trimmed)
+        : [trimmed];
+    })
+    .filter(Boolean);
+
+  const chunkTexts: string[] = [];
+  let current = "";
+
+  for (const segment of segments) {
+    const candidate = current ? `${current}\n${segment}` : segment;
+
+    if (candidate.length <= MAX_CHUNK_LENGTH) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      chunkTexts.push(current);
+    }
+
+    current =
+      segment.length > MAX_CHUNK_LENGTH
+        ? segment.slice(0, MAX_CHUNK_LENGTH)
+        : segment;
+  }
+
+  if (current) {
+    chunkTexts.push(current);
+  }
+
+  return chunkTexts.map((content) =>
+    buildChunk({
+      knowledgeBaseId: input.knowledgeBaseId,
+      sourceId: input.sourceId,
+      excerpt: buildExcerpt(content),
+      content,
+      keywords: buildSearchKeywords({
+        text: content,
+        seedKeywords: input.seedKeywords,
+      }),
+    }),
+  );
+}
+
+function buildFileCitationLabel(fileName: string) {
+  const normalized = fileName.replace(/[^a-z0-9]/gi, "").toUpperCase();
+
+  return `[FILE-${normalized.slice(0, 6) || "DOC"}]`;
+}
+
+function buildUrlCitationLabel(title: string) {
+  const normalized = title.replace(/[^a-z0-9]/gi, "").toUpperCase();
+
+  return `[URL-${normalized.slice(0, 6) || "PAGE"}]`;
+}
+
+async function fetchUrlDocument(url: string) {
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "User-Agent": "TraceDeskBot/0.1 (+https://localhost)",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`网页抓取失败，状态码 ${response.status}`);
+  }
+
+  const html = await response.text();
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+
+  return {
+    title: titleMatch ? normalizeText(decodeHtmlEntities(titleMatch[1])) : "",
+    text: stripHtml(bodyMatch?.[1] ?? html),
   };
 }
 
@@ -39,13 +271,27 @@ export function inferSourceKindFromFileName(
   }
 }
 
-export function createImportedUrlSource(input: ImportUrlInput) {
+export async function createImportedUrlSource(input: ImportUrlInput) {
   const parsedUrl = new URL(input.url);
   const sourceId = crypto.randomUUID();
+  const updatedAt = new Date().toISOString();
+  const urlDocument = await fetchUrlDocument(input.url);
   const title =
     input.title?.trim() ||
+    urlDocument.title ||
     `${parsedUrl.hostname}${parsedUrl.pathname === "/" ? "" : parsedUrl.pathname}`;
-  const updatedAt = new Date().toISOString();
+  const chunks = buildChunksFromText({
+    knowledgeBaseId: input.knowledgeBaseId,
+    sourceId,
+    text: urlDocument.text,
+    seedKeywords: ["网页", "网页导入", parsedUrl.hostname, title],
+  });
+  const status = chunks.length > 0 ? "available" : "failed";
+  const retrievalStatus = chunks.length > 0 ? "retrievable" : "unavailable";
+  const summary =
+    chunks.length > 0
+      ? `已抓取 ${parsedUrl.hostname} 网页正文，并生成 ${chunks.length} 个可检索分块。`
+      : `已抓取 ${parsedUrl.hostname}，但暂未提取到可检索正文。`;
 
   return {
     source: {
@@ -53,37 +299,73 @@ export function createImportedUrlSource(input: ImportUrlInput) {
       knowledgeBaseId: input.knowledgeBaseId,
       title,
       kind: "url" as const,
-      status: "available" as const,
-      summary: `已从 ${parsedUrl.hostname} 抓取页面，可继续补充分块与摘要提炼。`,
+      status,
+      retrievalStatus,
+      retrievalDetail:
+        chunks.length > 0
+          ? `网页正文已抓取完成，并生成 ${chunks.length} 个分块，可参与问答检索。`
+          : "网页已保存到来源列表，但当前未提取到可检索正文。",
+      summary,
       updatedAt,
-      chunkCount: 1,
-      citationLabel: `[URL-${title.slice(0, 6).toUpperCase()}]`,
+      chunkCount: chunks.length,
+      citationLabel: buildUrlCitationLabel(title),
       url: input.url,
+      duplicateOf: null,
     } satisfies SourceDocumentSummary,
-    chunks: [
-      buildChunk({
-        knowledgeBaseId: input.knowledgeBaseId,
-        sourceId,
-        excerpt: `该网页来源于 ${parsedUrl.hostname}，已进入知识库索引。`,
-        content: `网页 ${title} 已进入知识库索引，可以作为后续引用展示和来源预览的候选样本。`,
-        keywords: ["网页", "导入", parsedUrl.hostname.toLowerCase()],
-      }),
-    ],
+    chunks,
   };
 }
 
-export function createUploadedFileSource(input: {
+export async function createUploadedFileSource(input: {
   knowledgeBaseId: string;
   fileName: string;
   fileSize: number;
+  fileContent?: string;
+  kind?: Exclude<SourceDocumentKind, "url">;
 }) {
   const sourceId = crypto.randomUUID();
   const updatedAt = new Date().toISOString();
-  const kind = inferSourceKindFromFileName(input.fileName);
+  const kind = input.kind ?? inferSourceKindFromFileName(input.fileName);
 
-  if (!kind) {
+  if (!kind || kind === "url") {
     throw new Error("Unsupported file type");
   }
+
+  if (kind === "pdf") {
+    return {
+      source: {
+        id: sourceId,
+        knowledgeBaseId: input.knowledgeBaseId,
+        title: input.fileName,
+        kind,
+        status: "available" as const,
+        retrievalStatus: "stored_only" as const,
+        retrievalDetail: "PDF 已保存到知识库，但当前版本暂未解析正文，因此不能参与问答检索。",
+        summary: "当前版本暂未解析 PDF 正文，已记录来源，但暂时无法参与问答检索。",
+        updatedAt,
+        chunkCount: 0,
+        citationLabel: buildFileCitationLabel(input.fileName),
+        duplicateOf: null,
+      } satisfies SourceDocumentSummary,
+      chunks: [],
+    };
+  }
+
+  const rawContent = input.fileContent?.trim() ?? "";
+  const normalizedContent =
+    kind === "markdown" ? stripMarkdown(rawContent) : normalizeText(rawContent);
+  const chunks = buildChunksFromText({
+    knowledgeBaseId: input.knowledgeBaseId,
+    sourceId,
+    text: normalizedContent,
+    seedKeywords: ["文件", "上传", input.fileName, kind],
+  });
+  const status = chunks.length > 0 ? "available" : "failed";
+  const retrievalStatus = chunks.length > 0 ? "retrievable" : "unavailable";
+  const summary =
+    chunks.length > 0
+      ? `已解析文件正文，并生成 ${chunks.length} 个可检索分块，当前大小 ${(input.fileSize / 1024).toFixed(1)} KB。`
+      : "文件已上传，但暂未提取到可检索正文。";
 
   return {
     source: {
@@ -91,20 +373,18 @@ export function createUploadedFileSource(input: {
       knowledgeBaseId: input.knowledgeBaseId,
       title: input.fileName,
       kind,
-      status: "available" as const,
-      summary: `已接收文件并生成首批样例分块，当前大小 ${(input.fileSize / 1024).toFixed(1)} KB。`,
+      status,
+      retrievalStatus,
+      retrievalDetail:
+        chunks.length > 0
+          ? `已生成 ${chunks.length} 个分块，可直接参与问答检索。`
+          : "文件已保存，但当前未提取到可检索正文。",
+      summary,
       updatedAt,
-      chunkCount: 1,
-      citationLabel: `[FILE-${input.fileName.slice(0, 4).toUpperCase()}]`,
+      chunkCount: chunks.length,
+      citationLabel: buildFileCitationLabel(input.fileName),
+      duplicateOf: null,
     } satisfies SourceDocumentSummary,
-    chunks: [
-      buildChunk({
-        knowledgeBaseId: input.knowledgeBaseId,
-        sourceId,
-        excerpt: `文件 ${input.fileName} 已上传，可用于后续切块与引用展示。`,
-        content: `上传文件 ${input.fileName} 后，系统会继续执行解析、切块和索引；当前已生成首个占位样例块。`,
-        keywords: ["上传", "文件", input.fileName.toLowerCase()],
-      }),
-    ],
+    chunks,
   };
 }

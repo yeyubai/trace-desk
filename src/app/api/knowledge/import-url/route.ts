@@ -8,7 +8,7 @@ import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSn
 export async function POST(request: Request) {
   try {
     const payload = importUrlSchema.parse(await request.json());
-    const importedSource = createImportedUrlSource(payload);
+    const importedSource = await createImportedUrlSource(payload);
 
     addSourceDocument(importedSource);
 
@@ -25,7 +25,12 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { message: "网页导入失败，请检查链接后重试" },
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "网页导入失败，请检查链接后重试",
+      },
       { status: 500 },
     );
   }

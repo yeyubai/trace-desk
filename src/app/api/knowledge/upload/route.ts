@@ -9,35 +9,49 @@ import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSn
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const formData = await request.formData();
-  const fileEntry = formData.get("file");
-  const knowledgeBaseId = formData.get("knowledgeBaseId");
+  try {
+    const formData = await request.formData();
+    const fileEntry = formData.get("file");
+    const knowledgeBaseId = formData.get("knowledgeBaseId");
 
-  if (!(fileEntry instanceof File) || typeof knowledgeBaseId !== "string") {
-    return NextResponse.json({ message: "请上传文件并提供知识库 ID" }, { status: 400 });
-  }
+    if (!(fileEntry instanceof File) || typeof knowledgeBaseId !== "string") {
+      return NextResponse.json({ message: "请上传文件并提供知识库 ID" }, { status: 400 });
+    }
 
-  if (fileEntry.size > MAX_UPLOAD_SIZE) {
+    if (fileEntry.size > MAX_UPLOAD_SIZE) {
+      return NextResponse.json(
+        { message: "文件过大，请控制在 10MB 以内" },
+        { status: 400 },
+      );
+    }
+
+    const kind = inferSourceKindFromFileName(fileEntry.name);
+
+    if (!kind || kind === "url") {
+      return NextResponse.json(
+        { message: "暂仅支持 PDF、Markdown、TXT 文件" },
+        { status: 400 },
+      );
+    }
+
+    const sourceDocument = await createUploadedFileSource({
+      fileName: fileEntry.name,
+      fileSize: fileEntry.size,
+      fileContent: kind === "pdf" ? undefined : await fileEntry.text(),
+      kind,
+      knowledgeBaseId,
+    });
+
+    addSourceDocument(sourceDocument);
+
+    return NextResponse.json(getWorkbenchSnapshot());
+  } catch (error) {
     return NextResponse.json(
-      { message: "文件过大，请控制在 10MB 以内" },
-      { status: 400 },
+      {
+        message:
+          error instanceof Error ? error.message : "文件导入失败，请稍后重试。",
+      },
+      { status: 500 },
     );
   }
-
-  if (!inferSourceKindFromFileName(fileEntry.name)) {
-    return NextResponse.json(
-      { message: "暂仅支持 PDF、Markdown、TXT 文件" },
-      { status: 400 },
-    );
-  }
-
-  const sourceDocument = createUploadedFileSource({
-    fileName: fileEntry.name,
-    fileSize: fileEntry.size,
-    knowledgeBaseId,
-  });
-
-  addSourceDocument(sourceDocument);
-
-  return NextResponse.json(getWorkbenchSnapshot());
 }

@@ -60,10 +60,29 @@ function buildDependencyStatuses(): RuntimeDependency[] {
 
 export function getRuntimeOverview(): RuntimeOverview {
   const env = getEnv();
+  const dependencies = buildDependencyStatuses();
+  const configuredCount = dependencies.filter(
+    (dependency) => dependency.status === "configured",
+  ).length;
+  const missingCount = dependencies.filter(
+    (dependency) => dependency.status === "missing",
+  ).length;
+  const mockCount = dependencies.filter((dependency) => dependency.status === "mock").length;
 
   return {
     dataMode: env.APP_DATA_MODE,
     aiMode: env.APP_AI_MODE,
-    dependencies: buildDependencyStatuses(),
+    dependencies,
+    summary: {
+      configuredCount,
+      missingCount,
+      mockCount,
+      ready: missingCount === 0,
+      label: missingCount === 0 ? "全部就绪" : `${missingCount} 项待补`,
+      detail:
+        missingCount === 0
+          ? "所有关键依赖都已达到当前工作台所需状态。"
+          : "当前工作台仍有依赖未配置，但 mock 模式仍可继续推进页面与交互开发。",
+    },
   };
 }

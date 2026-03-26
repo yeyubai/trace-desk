@@ -8,14 +8,25 @@ import type { SourceDocumentSummary } from "@/features/knowledge/types/knowledge
 import {
   formatRelativeTime,
   formatSourceKindLabel,
+  formatSourceRetrievalStatusLabel,
   formatSourceStatusLabel,
 } from "@/lib/formatters";
 
 type SourceListPanelProps = {
   sources: SourceDocumentSummary[];
+  selectedSourceId?: string | null;
+  onSelectSource?: (sourceId: string) => void;
+  limit?: number;
 };
 
-export function SourceListPanel({ sources }: SourceListPanelProps) {
+export function SourceListPanel({
+  sources,
+  selectedSourceId = null,
+  onSelectSource,
+  limit,
+}: SourceListPanelProps) {
+  const visibleSources = typeof limit === "number" ? sources.slice(0, limit) : sources;
+
   return (
     <Card>
       <CardContent className="space-y-4">
@@ -26,10 +37,16 @@ export function SourceListPanel({ sources }: SourceListPanelProps) {
         />
 
         <div className="space-y-3">
-          {sources.slice(0, 4).map((source) => (
-            <div
+          {visibleSources.map((source) => (
+            <button
+              type="button"
               key={source.id}
-              className="rounded-[1.4rem] border border-line bg-panel-strong p-4"
+              className={`w-full rounded-[1.4rem] border bg-panel-strong p-4 text-left transition-colors ${
+                selectedSourceId === source.id
+                  ? "border-accent"
+                  : "border-line hover:border-accent/40"
+              }`}
+              onClick={() => onSelectSource?.(source.id)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -43,14 +60,24 @@ export function SourceListPanel({ sources }: SourceListPanelProps) {
                 </Badge>
               </div>
 
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge variant={source.retrievalStatus === "retrievable" ? "accent" : "neutral"}>
+                  {formatSourceRetrievalStatusLabel(source.retrievalStatus)}
+                </Badge>
+                {source.duplicateOf ? (
+                  <Badge variant="warning">可能重复</Badge>
+                ) : null}
+              </div>
+
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted">
                 <div className="flex items-center gap-1.5">
                   <BookOpenText className="size-3.5 text-accent-strong" />
                   {formatSourceKindLabel(source.kind)}
                 </div>
+                <span>{source.chunkCount} 个分块</span>
                 <span>{formatRelativeTime(source.updatedAt)}</span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </CardContent>

@@ -26,6 +26,18 @@ function getBadgeVariant(status: RuntimeDependency["status"]) {
   return "neutral";
 }
 
+function getStatusLabel(status: RuntimeDependency["status"]) {
+  if (status === "configured") {
+    return "已配置";
+  }
+
+  if (status === "missing") {
+    return "待配置";
+  }
+
+  return "mock";
+}
+
 type RuntimeStatusPanelProps = {
   runtime: RuntimeOverview;
 };
@@ -37,7 +49,7 @@ export function RuntimeStatusPanel({ runtime }: RuntimeStatusPanelProps) {
         <SectionHeading
           eyebrow="连接状态"
           title="当前模式"
-          description="这里只保留最关键的状态。"
+          description={runtime.summary.detail}
         />
 
         <div className="flex flex-wrap gap-2">
@@ -46,6 +58,9 @@ export function RuntimeStatusPanel({ runtime }: RuntimeStatusPanelProps) {
           </Badge>
           <Badge variant={runtime.aiMode === "mock" ? "neutral" : "accent"}>
             AI: {runtime.aiMode}
+          </Badge>
+          <Badge variant={runtime.summary.ready ? "accent" : "warning"}>
+            {runtime.summary.label}
           </Badge>
         </div>
 
@@ -67,10 +82,13 @@ export function RuntimeStatusPanel({ runtime }: RuntimeStatusPanelProps) {
                       <p className="truncate text-sm font-medium text-foreground">
                         {dependency.label}
                       </p>
+                      <p className="mt-1 text-xs leading-5 text-muted">
+                        {dependency.detail}
+                      </p>
                     </div>
                   </div>
                   <Badge variant={getBadgeVariant(dependency.status)}>
-                    {dependency.status}
+                    {getStatusLabel(dependency.status)}
                   </Badge>
                 </div>
               </div>

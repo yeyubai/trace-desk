@@ -1,5 +1,6 @@
 import type {
   SourceDocumentKind,
+  SourceRetrievalStatus,
   SourceDocumentStatus,
 } from "@/features/knowledge/types/knowledge";
 
@@ -70,11 +71,24 @@ export function formatSourceKindLabel(kind: SourceDocumentKind) {
 export function formatSourceStatusLabel(status: SourceDocumentStatus) {
   switch (status) {
     case "available":
-      return "可检索";
+      return "已导入";
     case "indexing":
-      return "索引中";
+      return "处理中";
     case "failed":
-      return "失败";
+      return "导入失败";
+    default:
+      return status;
+  }
+}
+
+export function formatSourceRetrievalStatusLabel(status: SourceRetrievalStatus) {
+  switch (status) {
+    case "retrievable":
+      return "可检索";
+    case "stored_only":
+      return "仅存储";
+    case "unavailable":
+      return "暂不可检索";
     default:
       return status;
   }

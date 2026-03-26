@@ -93,8 +93,8 @@ function createSeedState(): MockWorkbenchState {
     id: "kb-trace-desk",
     name: "Trace Desk 首版知识库",
     description: "围绕导入、引用、拒答和评测闭环构建的首版工作台样例知识库。",
-    sourceCount: 3,
-    chunkCount: 9,
+    sourceCount: 5,
+    chunkCount: 5,
     lastIndexedAt: thirtyMinutesAgo,
     retrievalReadiness: "引用优先，未命中明确拒答",
     focusAreas: ["导入流程", "引用展示", "拒答策略", "会话评测"],
@@ -107,33 +107,71 @@ function createSeedState(): MockWorkbenchState {
       title: "RAG 接入规范 v1.2",
       kind: "markdown",
       status: "available",
+      retrievalStatus: "retrievable",
+      retrievalDetail: "已生成 2 个分块，可直接参与问答检索。",
       summary: "明确要求回答必须带引用来源，检索未命中时给出拒答说明。",
       updatedAt: thirtyMinutesAgo,
-      chunkCount: 3,
+      chunkCount: 2,
       citationLabel: "[RAG-1]",
+      duplicateOf: null,
     },
     {
       id: "src-chat-parts",
       knowledgeBaseId: knowledgeBase.id,
       title: "对话消息 parts 设计说明",
-      kind: "pdf",
+      kind: "txt",
       status: "available",
+      retrievalStatus: "retrievable",
+      retrievalDetail: "已生成 2 个分块，可在问答与引用中直接命中。",
       summary: "约定消息统一采用 parts 结构，支持文本、引用、状态和追问建议。",
       updatedAt: sixHoursAgo,
-      chunkCount: 3,
+      chunkCount: 2,
       citationLabel: "[CHAT-2]",
+      duplicateOf: null,
+    },
+    {
+      id: "src-phase2-pdf",
+      knowledgeBaseId: knowledgeBase.id,
+      title: "导入体验草图.pdf",
+      kind: "pdf",
+      status: "available",
+      retrievalStatus: "stored_only",
+      retrievalDetail: "PDF 已保存，但当前版本还不会解析正文，因此不会参与问答检索。",
+      summary: "产品草图已保存为来源记录，后续可继续补 PDF 正文解析。",
+      updatedAt: ninetyMinutesAgo,
+      chunkCount: 0,
+      citationLabel: "[FILE-DRAFT]",
+      duplicateOf: null,
     },
     {
       id: "src-eval-weekly",
       knowledgeBaseId: knowledgeBase.id,
       title: "会话评测周报",
       kind: "url",
-      status: "indexing",
+      status: "available",
+      retrievalStatus: "retrievable",
+      retrievalDetail: "网页正文已抓取完成，可直接参与引用和问答。",
       summary: "整理了质量标注、反馈记录和下一阶段评测重点。",
       updatedAt: yesterday,
-      chunkCount: 3,
+      chunkCount: 1,
       citationLabel: "[EVAL-3]",
       url: "https://example.com/reports/weekly-eval",
+      duplicateOf: null,
+    },
+    {
+      id: "src-onboarding-pending",
+      knowledgeBaseId: knowledgeBase.id,
+      title: "新来源抓取中",
+      kind: "url",
+      status: "indexing",
+      retrievalStatus: "unavailable",
+      retrievalDetail: "网页已加入来源列表，正在抓取正文并生成分块，完成后才能参与问答。",
+      summary: "这条来源用于展示“处理中但暂不可检索”的状态。",
+      updatedAt: new Date(now.getTime() - 12 * 60_000).toISOString(),
+      chunkCount: 0,
+      citationLabel: "[URL-PEND]",
+      url: "https://example.com/onboarding",
+      duplicateOf: null,
     },
   ];
 
@@ -252,6 +290,19 @@ function createSeedState(): MockWorkbenchState {
 
 const state = createSeedState();
 
+function normalizeDuplicateKey(source: Pick<SourceDocumentSummary, "kind" | "title" | "url">) {
+  if (source.url) {
+    try {
+      const parsed = new URL(source.url);
+      return `url:${parsed.hostname}${parsed.pathname}`.toLowerCase();
+    } catch {
+      return `url:${source.url}`.toLowerCase();
+    }
+  }
+
+  return `file:${source.kind}:${source.title.trim().toLowerCase()}`;
+}
+
 export function getKnowledgeBaseOverview() {
   return structuredClone(state.knowledgeBase);
 }
@@ -309,13 +360,29 @@ export function addSourceDocument(args: {
   source: SourceDocumentSummary;
   chunks: SourceChunkRecord[];
 }) {
-  state.sources = [args.source, ...state.sources];
+  const duplicateOf = state.sources.find(
+    (existing) => normalizeDuplicateKey(existing) === normalizeDuplicateKey(args.source),
+  );
+  const sourceWithDuplicateHint: SourceDocumentSummary = duplicateOf
+    ? {
+        ...args.source,
+        duplicateOf: {
+          sourceId: duplicateOf.id,
+          title: duplicateOf.title,
+        },
+      }
+    : {
+        ...args.source,
+        duplicateOf: args.source.duplicateOf ?? null,
+      };
+
+  state.sources = [sourceWithDuplicateHint, ...state.sources];
   state.sourceChunks = [...args.chunks, ...state.sourceChunks];
   state.knowledgeBase = {
     ...state.knowledgeBase,
     sourceCount: state.sources.length,
     chunkCount: state.sourceChunks.length,
-    lastIndexedAt: args.source.updatedAt,
+    lastIndexedAt: sourceWithDuplicateHint.updatedAt,
   };
 }
 

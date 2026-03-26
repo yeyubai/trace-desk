@@ -12,11 +12,13 @@ import {
   importUrlSchema,
   type ImportUrlFormValues,
 } from "@/features/knowledge/schemas/import-source";
+import type { ImportFeedback } from "@/features/knowledge/lib/build-import-feedback";
 
 type ImportSourceFormProps = {
   knowledgeBaseId: string;
   isImportingUrl: boolean;
   isUploadingFile: boolean;
+  feedback?: ImportFeedback | null;
   onImportUrl: (values: ImportUrlFormValues) => void;
   onUploadFile: (file: File) => void;
 };
@@ -25,6 +27,7 @@ export function ImportSourceForm({
   knowledgeBaseId,
   isImportingUrl,
   isUploadingFile,
+  feedback = null,
   onImportUrl,
   onUploadFile,
 }: ImportSourceFormProps) {
@@ -46,6 +49,19 @@ export function ImportSourceForm({
           title="导入来源"
           description="把文件或网页加入知识库。"
         />
+
+        {feedback ? (
+          <div
+            className={`rounded-[1.35rem] border px-4 py-3 text-sm ${
+              feedback.tone === "success"
+                ? "border-accent/20 bg-accent-soft text-accent-strong"
+                : "border-warning/20 bg-warning-soft text-warning"
+            }`}
+          >
+            <p className="font-medium">{feedback.title}</p>
+            <p className="mt-1 leading-6">{feedback.description}</p>
+          </div>
+        ) : null}
 
         <div className="rounded-[1.5rem] border border-line bg-panel-strong p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -89,7 +105,7 @@ export function ImportSourceForm({
             }}
           />
           <p className="mt-3 text-xs leading-6 text-muted">
-            上传后会加入知识库，随后可以直接在中间提问。
+            上传后会加入知识库，系统会明确告知它是否已经可检索。
           </p>
         </div>
 
@@ -110,7 +126,7 @@ export function ImportSourceForm({
           </div>
 
           <p className="text-sm leading-6 text-muted">
-            输入网页地址，把网页内容加入知识库。
+            输入网页地址，把网页内容加入知识库，并返回导入结果说明。
           </p>
 
           <Input placeholder="https://example.com/spec" {...form.register("url")} />
