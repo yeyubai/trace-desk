@@ -63,7 +63,7 @@ Plans:
 
 Plans:
 - [x] 03-01: 统一 chat message `parts`、会话上下文与问答请求/响应结构
-- [ ] 03-02: 完成 grounded answer 服务端链路与引用展示
+- [x] 03-02: 完成 grounded answer 服务端链路与引用展示
 - [ ] 03-03: 补齐模型档位切换、未命中拒答与 chat 状态流转
 
 ### Phase 4: Sessions & Feedback Loop
@@ -105,6 +105,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Foundation Stabilization | 3/3 | Complete | 2026-03-26 |
 | 2. Knowledge Ingestion Experience | 3/3 | Complete | 2026-03-26 |
-| 3. Grounded Chat Core | 1/3 | In progress | - |
+| 3. Grounded Chat Core | 2/3 | In progress | - |
 | 4. Sessions & Feedback Loop | 0/3 | Not started | - |
 | 5. Reliability & Portfolio Finish | 0/3 | Not started | - |

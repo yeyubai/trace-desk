@@ -12,17 +12,17 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 Current Phase: 3
 Current Phase Name: Grounded Chat Core
 Total Phases: 5
-Current Plan: 1
+Current Plan: 2
 Total Plans in Phase: 3
 Status: In progress
-Last Activity: 2026-03-26 — Completed Phase 3 plan 03-01 and stabilized chat stream/context contract
-Last Activity Description: Chat now uses explicit stream events, recent conversation context, and citation-to-source-detail linking; next step is 03-02.
-Progress: 47%
+Last Activity: 2026-03-26 — Completed Phase 3 plan 03-02 and added evidence-gated grounded answer behavior
+Last Activity Description: Retrieval now uses recent context, and chat refuses server-side when no usable evidence exists; next step is 03-03.
+Progress: 53%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: session-based
 - Total execution time: session-based
 
@@ -32,10 +32,10 @@ Progress: 47%
 |-------|-------|-------|----------|
 | 1 | 3 | session-based | session-based |
 | 2 | 3 | session-based | session-based |
-| 3 | 1 | session-based | session-based |
+| 3 | 2 | session-based | session-based |
 
 **Recent Trend:**
-- Last 5 plans: 01-03, 02-01, 02-02, 02-03, 03-01
+- Last 5 plans: 02-01, 02-02, 02-03, 03-01, 03-02
 - Trend: Improving
 
 ## Decisions Made
@@ -54,6 +54,8 @@ Progress: 47%
 | 3 | Use explicit `init / delta / complete / error` events for chat streaming | Keeps route, hook, and UI aligned on one protocol |
 | 3 | Feed only recent text messages into prompt context | Balances continuity with prompt size and implementation cost |
 | 3 | Open source detail when a citation is clicked | Reuses the Phase 2 detail surface instead of creating a new overlay |
+| 3 | Build retrieval query from recent context plus current question | Improves follow-up retrieval without introducing full history bloat |
+| 3 | Refuse server-side when there are no usable citations | Prevents the model from answering with unsupported evidence |
 
 ## Pending Todos
 
@@ -66,6 +68,6 @@ None yet.
 
 ## Session
 
-Last Date: 2026-03-26 02:05
-Stopped At: Phase 3 plan 03-01 completed with `lint / typecheck / build` passing; next recommended command is to continue Phase 3 plan execution
+Last Date: 2026-03-26 02:40
+Stopped At: Phase 3 plan 03-02 completed with `lint / typecheck / build` passing; next recommended command is to continue Phase 3 plan execution
 Resume File: None

@@ -56,6 +56,7 @@
 | 导入状态与检索状态拆成双维模型 | 避免把“已保存但不可检索”的来源误报为失败 | ✓ Good |
 | 重复导入 Phase 2 先提示不合并 | 在 mock 阶段优先保证透明反馈而不是复杂覆盖逻辑 | ✓ Good |
 | 聊天链路先稳定 NDJSON 流式协议和最近上下文，再继续深化 grounded answer | 先把消息契约和会话 continuity 打稳，后续增强才不会返工 | ✓ Good |
+| grounded answer 先由服务端做证据门控 | 没有可用 citation 时直接拒答，比依赖模型自觉更稳 | ✓ Good |
 
 ## Evolution
 
@@ -75,4 +76,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after Phase 3 Plan 01*
+*Last updated: 2026-03-26 after Phase 3 Plan 02*
