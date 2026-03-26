@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation Stabilization** - 统一页面壳子、状态契约与 mock/live 边界
 - [x] **Phase 2: Knowledge Ingestion Experience** - 补齐来源导入、来源详情和导入错误反馈
 - [ ] **Phase 3: Grounded Chat Core** - 打通 grounded answer、引用展示和模型档位链路
-- [ ] **Phase 4: Sessions & Feedback Loop** - 完成历史会话恢复、反馈闭环与追问建议
+- [x] **Phase 4: Sessions & Feedback Loop** - 完成历史会话恢复、反馈闭环与追问建议
 - [ ] **Phase 5: Reliability & Portfolio Finish** - 完成可靠性自测、空态异常态与作品集收尾
 
 ## Phase Details
@@ -77,9 +77,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: 打通历史会话读取与会话侧栏恢复链路
-- [ ] 04-02: 完成反馈提交、反馈状态展示与会话内联更新
-- [ ] 04-03: 补齐 grounded follow-up / next-step suggestion 的展示与约束
+- [x] 04-01: 打通历史会话读取与会话侧栏恢复链路
+- [x] 04-02: 完成反馈提交、反馈状态展示与会话内联更新
+- [x] 04-03: 补齐 grounded follow-up / next-step suggestion 的展示与约束
 
 ### Phase 5: Reliability & Portfolio Finish
 **Goal**: 用可验证的自测、异常态和演示资料，把项目从“能跑”推进到“能展示、能解释、能交付”。
@@ -106,5 +106,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Foundation Stabilization | 3/3 | Complete | 2026-03-26 |
 | 2. Knowledge Ingestion Experience | 3/3 | Complete | 2026-03-26 |
 | 3. Grounded Chat Core | 3/3 | Complete | 2026-03-26 |
-| 4. Sessions & Feedback Loop | 0/3 | Not started | - |
+| 4. Sessions & Feedback Loop | 3/3 | Complete | 2026-03-26 |
 | 5. Reliability & Portfolio Finish | 0/3 | Not started | - |

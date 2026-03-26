@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** 团队成员能基于可信引用，快速从文档和网页中得到可追溯的答案，而不是只看到一个“像是正确”的聊天回复。
-**Current focus:** Sessions & Feedback Loop
+**Current focus:** Reliability & Portfolio Finish
 
 ## Current Position
 
-Current Phase: 4
-Current Phase Name: Sessions & Feedback Loop
+Current Phase: 5
+Current Phase Name: Reliability & Portfolio Finish
 Total Phases: 5
 Current Plan: 0
 Total Plans in Phase: 3
 Status: Ready to discuss
-Last Activity: 2026-03-26 — Completed Phase 3 grounded chat core and moved project focus to sessions and feedback
-Last Activity Description: Streaming, evidence-gated refusal, model tier awareness, and chat state UX are in place; next step is to discuss Phase 4.
-Progress: 60%
+Last Activity: 2026-03-26 — Completed Phase 4 sessions and feedback loop and moved project focus to reliability
+Last Activity Description: Session restore, persistent feedback, next-step suggestions, and browser-verified feedback loop are in place; next step is to discuss Phase 5.
+Progress: 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 12
 - Average duration: session-based
 - Total execution time: session-based
 
@@ -33,9 +33,10 @@ Progress: 60%
 | 1 | 3 | session-based | session-based |
 | 2 | 3 | session-based | session-based |
 | 3 | 3 | session-based | session-based |
+| 4 | 3 | session-based | session-based |
 
 **Recent Trend:**
-- Last 5 plans: 02-02, 02-03, 03-01, 03-02, 03-03
+- Last 5 plans: 03-01, 03-02, 03-03, 04-01, 04-02/03
 - Trend: Improving
 
 ## Decisions Made
@@ -57,6 +58,8 @@ Progress: 60%
 | 3 | Build retrieval query from recent context plus current question | Improves follow-up retrieval without introducing full history bloat |
 | 3 | Refuse server-side when there are no usable citations | Prevents the model from answering with unsupported evidence |
 | 3 | Show model tier and workspace state explicitly in the chat UI | Users should always understand what mode answered and whether the answer is retrying, refusing, or complete |
+| 4 | Persist mock workbench state to disk | In-memory state was not reliable across requests, breaking feedback/session verification |
+| 4 | Use Sessions page as a conversation console | History list, session summary, followups, and continue action belong together |
 
 ## Pending Todos
 
@@ -69,6 +72,6 @@ None yet.
 
 ## Session
 
-Last Date: 2026-03-26 03:05
-Stopped At: Phase 3 completed with `lint / typecheck / build` passing; next recommended command is `$gsd-discuss-phase 4`
+Last Date: 2026-03-26 15:05
+Stopped At: Phase 4 completed with browser-verified restore/feedback flow; next recommended command is `$gsd-discuss-phase 5`
 Resume File: None

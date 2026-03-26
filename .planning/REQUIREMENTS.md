@@ -28,9 +28,9 @@
 
 ### Sessions & Feedback
 
-- [ ] **SESS-01**: User can reopen a past session and recover the message history needed to continue the conversation.
-- [ ] **SESS-02**: User can submit answer feedback and the system persists the feedback state.
-- [ ] **SESS-03**: Workspace can surface grounded next-step suggestions or follow-up prompts without inventing new evidence.
+- [x] **SESS-01**: User can reopen a past session and recover the message history needed to continue the conversation.
+- [x] **SESS-02**: User can submit answer feedback and the system persists the feedback state.
+- [x] **SESS-03**: Workspace can surface grounded next-step suggestions or follow-up prompts without inventing new evidence.
 
 ### Reliability & Portfolio
 
@@ -72,9 +72,9 @@
 | CHAT-03 | Phase 3 | Complete |
 | CHAT-04 | Phase 3 | Complete |
 | CHAT-05 | Phase 3 | Complete |
-| SESS-01 | Phase 4 | Pending |
-| SESS-02 | Phase 4 | Pending |
-| SESS-03 | Phase 4 | Pending |
+| SESS-01 | Phase 4 | Complete |
+| SESS-02 | Phase 4 | Complete |
+| SESS-03 | Phase 4 | Complete |
 | REL-01 | Phase 5 | Pending |
 | REL-02 | Phase 5 | Pending |
 | REL-03 | Phase 5 | Pending |

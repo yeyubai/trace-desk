@@ -58,6 +58,7 @@
 | 聊天链路先稳定 NDJSON 流式协议和最近上下文，再继续深化 grounded answer | 先把消息契约和会话 continuity 打稳，后续增强才不会返工 | ✓ Good |
 | grounded answer 先由服务端做证据门控 | 没有可用 citation 时直接拒答，比依赖模型自觉更稳 | ✓ Good |
 | 模型档位感知与聊天状态展示放在交互层闭环 | 不扩展协议也能让用户理解当前档位与回答状态 | ✓ Good |
+| 会话与反馈 mock 数据改为文件持久化 | 只有跨请求共享状态，历史会话和反馈闭环才算真实可测 | ✓ Good |
 
 ## Evolution
 
@@ -77,4 +78,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after Phase 3 complete*
+*Last updated: 2026-03-26 after Phase 4 complete*
