@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Knowledge Ingestion Experience** - 补齐来源导入、来源详情和导入错误反馈
 - [ ] **Phase 3: Grounded Chat Core** - 打通 grounded answer、引用展示和模型档位链路
 - [x] **Phase 4: Sessions & Feedback Loop** - 完成历史会话恢复、反馈闭环与追问建议
-- [ ] **Phase 5: Reliability & Portfolio Finish** - 完成可靠性自测、空态异常态与作品集收尾
+- [x] **Phase 5: Reliability & Portfolio Finish** - 完成可靠性自测、空态异常态与作品集收尾
 
 ## Phase Details
 
@@ -94,7 +94,7 @@ Plans:
 Plans:
 - [x] 05-01: 补齐关键空态、失败态、长会话/长列表等可靠性细节
 - [x] 05-02: 跑通 lint/typecheck/build 与核心手动验证清单
-- [ ] 05-03: 完成 README/演示脚本/作品集说明等收尾物料
+- [x] 05-03: 完成 README/演示脚本/作品集说明等收尾物料
 
 ## Progress
 
@@ -107,4 +107,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Knowledge Ingestion Experience | 3/3 | Complete | 2026-03-26 |
 | 3. Grounded Chat Core | 3/3 | Complete | 2026-03-26 |
 | 4. Sessions & Feedback Loop | 3/3 | Complete | 2026-03-26 |
-| 5. Reliability & Portfolio Finish | 2/3 | In progress | - |
+| 5. Reliability & Portfolio Finish | 3/3 | Complete | 2026-03-26 |

@@ -35,8 +35,8 @@
 ### Reliability & Portfolio
 
 - [ ] **REL-01**: Import, chat, and sessions flows all have explicit loading, empty, and failure states.
-- [ ] **REL-02**: Core milestone flows pass `npm run lint`, `npm run typecheck`, and `npm run build`.
-- [ ] **REL-03**: Project includes demo-friendly docs, seeded scenarios, and portfolio-ready presentation material.
+- [x] **REL-02**: Core milestone flows pass `npm run lint`, `npm run typecheck`, and `npm run build`.
+- [x] **REL-03**: Project includes demo-friendly docs, seeded scenarios, and portfolio-ready presentation material.
 
 ## v2 Requirements
 
@@ -76,8 +76,8 @@
 | SESS-02 | Phase 4 | Complete |
 | SESS-03 | Phase 4 | Complete |
 | REL-01 | Phase 5 | Pending |
-| REL-02 | Phase 5 | Pending |
-| REL-03 | Phase 5 | Pending |
+| REL-02 | Phase 5 | Complete |
+| REL-03 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 18 total

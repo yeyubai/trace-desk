@@ -19,9 +19,7 @@
 
 ### Active
 
-- [ ] 将当前骨架推进为可演示的 `v1.0 MVP`
-- [ ] 打通 grounded answer、引用展示、会话恢复、反馈闭环
-- [ ] 用 GSD phase workflow 管理剩余实现、验证和收尾
+- [ ] 进入 milestone 收尾与归档，准备下一轮真实服务化推进
 
 ### Out of Scope
 
@@ -80,4 +78,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after Phase 5 Plan 02*
+*Last updated: 2026-03-26 after Phase 5 complete*

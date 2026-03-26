@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** 团队成员能基于可信引用，快速从文档和网页中得到可追溯的答案，而不是只看到一个“像是正确”的聊天回复。
-**Current focus:** Reliability & Portfolio Finish
+**Current focus:** Milestone wrap-up
 
 ## Current Position
 
 Current Phase: 5
 Current Phase Name: Reliability & Portfolio Finish
 Total Phases: 5
-Current Plan: 2
+Current Plan: 3
 Total Plans in Phase: 3
-Status: In progress
-Last Activity: 2026-03-26 — Completed Phase 5 plan 05-02 and introduced LangChain-based chunking
-Last Activity Description: Retrieval now uses diagnostics-aware quality rules and refusal hints; next step is 05-03.
-Progress: 93%
+Status: Phase complete
+Last Activity: 2026-03-26 — Completed Phase 5 and finalized enterprise-grade RAG MVP framing
+Last Activity Description: Import diagnostics, LangChain-based chunking, diagnostics-aware retrieval, and product-facing RAG validation docs are all in place.
+Progress: 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: session-based
 - Total execution time: session-based
 
@@ -34,10 +34,10 @@ Progress: 93%
 | 2 | 3 | session-based | session-based |
 | 3 | 3 | session-based | session-based |
 | 4 | 3 | session-based | session-based |
-| 5 | 2 | session-based | session-based |
+| 5 | 3 | session-based | session-based |
 
 **Recent Trend:**
-- Last 5 plans: 03-03, 04-01, 04-02/03, 05-01, 05-02
+- Last 5 plans: 04-01, 04-02/03, 05-01, 05-02, 05-03
 - Trend: Improving
 
 ## Decisions Made
@@ -63,6 +63,7 @@ Progress: 93%
 | 4 | Use Sessions page as a conversation console | History list, session summary, followups, and continue action belong together |
 | 5 | Add extraction diagnostics to imported sources | RAG reliability requires import-stage observability, not just downstream refusal |
 | 5 | Introduce LangChain from the chunking layer | It is the safest first slice to move the stack from demo logic toward an enterprise RAG workflow |
+| 5 | Align docs and overview UI with the real RAG workflow | Enterprise delivery requires implementation and documentation to describe the same system |
 
 ## Pending Todos
 
@@ -75,6 +76,6 @@ Progress: 93%
 
 ## Session
 
-Last Date: 2026-03-26 23:20
-Stopped At: Phase 5 plan 05-02 completed with LangChain chunking and retrieval quality rules; next recommended command is to continue Phase 5 execution
+Last Date: 2026-03-26 23:45
+Stopped At: Phase 5 completed; next recommended command is milestone completion / wrap-up
 Resume File: None
