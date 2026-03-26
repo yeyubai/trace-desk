@@ -43,11 +43,13 @@
 }
 
 html {
+  height: 100%;
   scroll-behavior: smooth;
 }
 
 body {
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   background:
     radial-gradient(circle at top left, rgba(22, 119, 255, 0.18), transparent 28%),
     radial-gradient(circle at 85% 15%, rgba(9, 88, 217, 0.12), transparent 24%),
@@ -212,6 +214,12 @@ body::after {
 .markdown-body th {
   background: rgba(22, 119, 255, 0.08);
   font-weight: 600;
+}
+
+.app-scroll-area {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 ::-webkit-scrollbar {

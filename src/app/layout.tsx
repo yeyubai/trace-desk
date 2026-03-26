@@ -38,9 +38,9 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className={`${bodyFont.variable} ${displayFont.variable} ${monoFont.variable} h-full`}
+      className={`${bodyFont.variable} ${displayFont.variable} ${monoFont.variable} h-full overflow-hidden`}
     >
-      <body className="min-h-full bg-background text-foreground antialiased">
+      <body className="h-full overflow-hidden bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

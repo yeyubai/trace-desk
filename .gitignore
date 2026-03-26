@@ -65,3 +65,6 @@ temp/
 .codex/sessions/
 .codex/archived_sessions/
 .codex/memories/
+
+# Local GSD planning workspace
+.planning/
