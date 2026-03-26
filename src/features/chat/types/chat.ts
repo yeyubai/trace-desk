@@ -1,5 +1,38 @@
 export type ModelTier = "fast" | "quality";
 
+export type ModelTierOption = {
+  value: ModelTier;
+  label: string;
+  badgeLabel: string;
+  description: string;
+  latencyHint: string;
+};
+
+export const MODEL_TIER_OPTIONS: ModelTierOption[] = [
+  {
+    value: "fast",
+    label: "Fast",
+    badgeLabel: "快速",
+    description: "优先更快返回首轮答案，适合草拟、定位资料和连续追问。",
+    latencyHint: "更快返回",
+  },
+  {
+    value: "quality",
+    label: "Quality",
+    badgeLabel: "深度",
+    description: "优先更完整的整理与表达，适合需要更稳妥引用组织的回答。",
+    latencyHint: "更稳回答",
+  },
+];
+
+export const MODEL_TIER_META: Record<ModelTier, ModelTierOption> = MODEL_TIER_OPTIONS.reduce(
+  (result, option) => {
+    result[option.value] = option;
+    return result;
+  },
+  {} as Record<ModelTier, ModelTierOption>,
+);
+
 export type MessageRole = "user" | "assistant";
 
 export type CitationItem = {
@@ -9,6 +42,8 @@ export type CitationItem = {
   citationLabel: string;
   excerpt: string;
 };
+
+export type ChatMessageStatus = "streaming" | "toolRunning" | "failed";
 
 export type ChatMessagePart =
   | {
@@ -29,7 +64,7 @@ export type ChatMessagePart =
   | {
       id: string;
       type: "status";
-      status: "streaming" | "toolRunning" | "failed";
+      status: ChatMessageStatus;
       label: string;
     };
 
@@ -55,6 +90,13 @@ export type SendChatMessageInput = {
   modelTier: ModelTier;
   message: string;
 };
+
+export type ChatWorkspaceState =
+  | "ready"
+  | "streaming"
+  | "retrying"
+  | "refused"
+  | "failed";
 
 export type ChatStreamEvent =
   | {
