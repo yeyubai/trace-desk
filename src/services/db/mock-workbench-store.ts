@@ -553,6 +553,49 @@ export function getChatSessionById(sessionId: string) {
   );
 }
 
+export function renameChatSession(sessionId: string, title: string) {
+  const state = readState();
+  const normalizedTitle = title.trim();
+
+  if (!normalizedTitle) {
+    throw new Error("会话名称不能为空。");
+  }
+
+  state.sessions = state.sessions.map((session) =>
+    session.id === sessionId
+      ? {
+          ...session,
+          title: normalizedTitle,
+          updatedAt: new Date().toISOString(),
+        }
+      : session,
+  );
+  state.sessions.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+  writeState(state);
+}
+
+export function deleteChatSession(sessionId: string) {
+  const state = readState();
+  state.sessions = state.sessions.filter((session) => session.id !== sessionId);
+
+  if (state.sessions.length === 0) {
+    const now = new Date().toISOString();
+    state.sessions = [
+      {
+        id: crypto.randomUUID(),
+        title: "新会话",
+        modelTier: "quality",
+        updatedAt: now,
+        lastPreview: "",
+        messages: [],
+      },
+    ];
+  }
+
+  state.sessions.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+  writeState(state);
+}
+
 export function appendMessagesToSession(args: SessionAppendArgs) {
   const state = readState();
   state.sessions = state.sessions.map((session) => {
@@ -574,6 +617,8 @@ export function appendMessagesToSession(args: SessionAppendArgs) {
       messages: [...session.messages, args.userMessage, args.assistantMessage],
     };
   });
+
+  state.sessions.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
 
   writeState(state);
 }

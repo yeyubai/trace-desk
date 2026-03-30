@@ -409,6 +409,45 @@ export async function getChatSessionById(sessionId: string) {
   return mapSessionRow(row, await listMessagesBySessionId(row.id));
 }
 
+export async function renameChatSession(sessionId: string, title: string) {
+  const pool = getPostgresPool();
+  const normalizedTitle = title.trim();
+
+  if (!normalizedTitle) {
+    throw new Error("会话名称不能为空。");
+  }
+
+  await pool.query(
+    `
+      UPDATE chat_session
+      SET title = $2, updated_at = NOW()
+      WHERE id = $1
+    `,
+    [sessionId, normalizedTitle],
+  );
+}
+
+export async function deleteChatSession(sessionId: string) {
+  const pool = getPostgresPool();
+
+  await pool.query(`DELETE FROM chat_session WHERE id = $1`, [sessionId]);
+
+  const remainingSessions = await pool.query<{ id: string; knowledge_base_id: string }>(
+    `
+      SELECT id, knowledge_base_id
+      FROM chat_session
+      WHERE knowledge_base_id = $1
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `,
+    [DEFAULT_KNOWLEDGE_BASE_ID],
+  );
+
+  if (remainingSessions.rows.length === 0) {
+    await ensureDefaultSession(DEFAULT_KNOWLEDGE_BASE_ID);
+  }
+}
+
 export async function appendMessagesToSession(args: SessionAppendArgs) {
   const pool = getPostgresPool();
   const knowledgeBaseId = DEFAULT_KNOWLEDGE_BASE_ID;

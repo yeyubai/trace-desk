@@ -1,4 +1,3 @@
-import { PageHeader } from "@/features/workbench/components/PageHeader";
 import { WorkbenchShell } from "@/features/workbench/components/WorkbenchShell";
 import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSnapshot";
 
@@ -20,18 +19,12 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     : resolvedSearchParams?.draft;
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-      <PageHeader
-        title="问答"
-        description="直接提问、查看回答来源，并继续追问。"
+    <div className="h-full min-h-0 overflow-hidden">
+      <WorkbenchShell
+        initialSnapshot={snapshot}
+        initialSessionId={initialSessionId}
+        initialDraftMessage={initialDraftMessage}
       />
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <WorkbenchShell
-          initialSnapshot={snapshot}
-          initialSessionId={initialSessionId}
-          initialDraftMessage={initialDraftMessage}
-        />
-      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle, Lock, SendHorizontal, Sparkles } from "lucide-react";
+import { LoaderCircle, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -81,22 +81,8 @@ export function MessageComposer({
         });
       })}
     >
-      <div className="flex flex-wrap gap-2">
-        {suggestedPrompts.slice(0, 3).map((prompt) => (
-          <button
-            key={prompt}
-            type="button"
-            disabled={isSubmitting}
-            className="rounded-full border border-line bg-white/80 px-3 py-2 text-xs text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-strong disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => form.setValue("message", prompt, { shouldValidate: true })}
-          >
-            {prompt}
-          </button>
-        ))}
-      </div>
-
-      <div className="rounded-[1.7rem] border border-line bg-white/92 p-3 shadow-[0_18px_38px_rgba(20,34,44,0.08)]">
-        <div className="mb-3 grid gap-2 sm:grid-cols-2">
+      <div className="rounded-[1.55rem] border border-line bg-white/94 p-3 shadow-[0_16px_36px_rgba(20,34,44,0.08)]">
+        <div className="flex flex-wrap gap-2">
           {MODEL_TIER_OPTIONS.map((option) => {
             const isActive = currentModelTier === option.value;
 
@@ -106,52 +92,24 @@ export function MessageComposer({
                 type="button"
                 disabled={isSubmitting}
                 className={cn(
-                  "rounded-[1.25rem] border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-70",
+                  "rounded-full border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-70",
                   isActive
                     ? "border-accent bg-accent-soft text-accent-strong"
-                    : "border-line bg-white text-foreground hover:border-accent hover:bg-accent-soft/60",
+                    : "border-line bg-white text-muted hover:border-accent hover:bg-accent-soft/60 hover:text-foreground",
                 )}
                 onClick={() => form.setValue("modelTier", option.value, { shouldValidate: true })}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold">
-                      {option.label}
-                      <span className="ml-2 text-xs font-medium opacity-80">{option.badgeLabel}</span>
-                    </p>
-                    <p className="mt-1 text-xs leading-5 opacity-85">{option.description}</p>
-                  </div>
-                  <span className="rounded-full border border-current/15 px-2.5 py-1 text-[11px] font-medium">
-                    {option.latencyHint}
-                  </span>
-                </div>
+                <span className="font-medium">{option.label}</span>
+                <span className="ml-1 text-xs opacity-75">{option.badgeLabel}</span>
               </button>
             );
           })}
         </div>
 
-        <div className="mb-3 flex items-start justify-between gap-3 rounded-[1.2rem] border border-line/80 bg-panel px-4 py-3">
-          <div className="space-y-1">
-            <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Sparkles className="size-4 text-accent-strong" />
-              当前已选 {selectedTierMeta.label} 档位
-            </p>
-            <p className="text-xs leading-5 text-muted">
-              {isSubmitting
-                ? `本轮回答已锁定为 ${selectedTierMeta.label}，正在检索引用并流式返回。`
-                : selectedTierMeta.description}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-[11px] font-medium text-muted shadow-sm">
-            <Lock className="size-3.5" />
-            {isSubmitting ? "生成中不可切换" : "发送前可切换"}
-          </div>
-        </div>
-
         <Textarea
           disabled={isSubmitting}
-          className="min-h-[84px] resize-none border-0 bg-transparent px-1 py-1 text-[15px] shadow-none focus:border-0 disabled:cursor-not-allowed disabled:opacity-70"
-          placeholder="围绕当前知识库提问，回答会优先引用可检索证据。"
+          className="mt-3 min-h-[120px] resize-none rounded-[1.2rem] border border-line/80 bg-panel px-4 py-3 text-[15px] leading-7 shadow-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-70"
+          placeholder="围绕当前知识库直接提问，输入框会始终停留在这里。"
           {...form.register("message")}
         />
 
@@ -167,12 +125,26 @@ export function MessageComposer({
           </p>
         ) : null}
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-3 flex flex-wrap gap-2">
+          {suggestedPrompts.slice(0, 2).map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              disabled={isSubmitting}
+              className="rounded-full border border-line bg-panel px-3 py-2 text-xs text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent-strong disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => form.setValue("message", prompt, { shouldValidate: true })}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1 px-1">
             <p className="text-xs text-muted">
               {isSubmitting
-                ? "如需切换模型档位，请先停止当前回答。"
-                : "检索未命中时会明确拒答，不会伪造引用。"}
+                ? `当前已锁定 ${selectedTierMeta.label} 档位，正在返回回答。`
+                : "未命中时会明确拒答，不会伪造引用。"}
             </p>
             <p className="text-[11px] text-muted">
               {messageLength}/{MAX_CHAT_MESSAGE_LENGTH}

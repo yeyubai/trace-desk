@@ -52,6 +52,16 @@ export async function appendMessagesToSession(args: SessionAppendArgs) {
   await liveStore.appendMessagesToSession(args);
 }
 
+export async function renameChatSession(sessionId: string, title: string) {
+  assertLiveStoreReady();
+  await liveStore.renameChatSession(sessionId, title);
+}
+
+export async function deleteChatSession(sessionId: string) {
+  assertLiveStoreReady();
+  await liveStore.deleteChatSession(sessionId);
+}
+
 export async function addSourceDocument(args: SourceDocumentInsert) {
   assertLiveStoreReady();
   await liveStore.addSourceDocument(args);

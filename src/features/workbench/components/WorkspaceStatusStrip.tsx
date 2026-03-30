@@ -1,4 +1,7 @@
+"use client";
+
 import { Clock3, Layers3, MessagesSquare, RadioTower } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import type { RuntimeOverview } from "@/features/runtime/types/runtime";
 import { formatRelativeTime } from "@/lib/formatters";
@@ -16,8 +19,14 @@ export function WorkspaceStatusStrip({
   sessionCount,
   lastIndexedAt,
 }: WorkspaceStatusStripProps) {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/chat")) {
+    return null;
+  }
+
   return (
-    <section className="paper-panel rounded-[1.35rem] px-4 py-3 sm:px-5">
+    <section className="paper-panel rounded-[1.2rem] px-4 py-3 sm:px-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -35,21 +44,21 @@ export function WorkspaceStatusStrip({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[1.15rem] border border-line bg-panel-strong px-4 py-3">
+          <div className="rounded-[1rem] border border-line bg-panel-strong px-4 py-3">
             <div className="flex items-center gap-2 text-xs text-muted">
               <Layers3 className="size-4 text-accent-strong" />
               当前来源
             </div>
             <div className="mt-1 text-lg font-semibold text-foreground">{sourceCount}</div>
           </div>
-          <div className="rounded-[1.15rem] border border-line bg-panel-strong px-4 py-3">
+          <div className="rounded-[1rem] border border-line bg-panel-strong px-4 py-3">
             <div className="flex items-center gap-2 text-xs text-muted">
               <MessagesSquare className="size-4 text-accent-strong" />
               会话数量
             </div>
             <div className="mt-1 text-lg font-semibold text-foreground">{sessionCount}</div>
           </div>
-          <div className="rounded-[1.15rem] border border-line bg-panel-strong px-4 py-3">
+          <div className="rounded-[1rem] border border-line bg-panel-strong px-4 py-3">
             <div className="flex items-center gap-2 text-xs text-muted">
               <Clock3 className="size-4 text-accent-strong" />
               最近索引

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Database, MessageSquareText, NotebookTabs, Plus, Upload } from "lucide-react";
+import { Database, MessageSquareText, Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -10,7 +10,6 @@ const navigationItems = [
   { href: "/", label: "总览", icon: Database },
   { href: "/import", label: "导入", icon: Upload },
   { href: "/chat", label: "问答", icon: MessageSquareText },
-  { href: "/sessions", label: "会话", icon: NotebookTabs },
 ] as const;
 
 type DashboardTopBarProps = {
@@ -19,12 +18,20 @@ type DashboardTopBarProps = {
 
 export function DashboardTopBar({ knowledgeBaseName }: DashboardTopBarProps) {
   const pathname = usePathname();
+  const isChatPage = pathname.startsWith("/chat");
 
   return (
-    <section className="paper-panel rounded-[1.35rem] px-4 py-3 sm:px-5">
+    <section
+      className={cn(
+        "paper-panel px-4 sm:px-5",
+        isChatPage ? "rounded-[1.2rem] py-3" : "rounded-[1.35rem] py-3",
+      )}
+    >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="text-sm font-medium text-foreground">知识问答工作台</div>
+          <Link href="/chat" className="text-sm font-medium text-foreground">
+            知识问答工作台
+          </Link>
           <div className="flex items-center gap-2 rounded-full border border-line bg-panel-strong px-3 py-2 text-sm text-foreground">
             <Database className="size-4 text-accent-strong" />
             {knowledgeBaseName}
@@ -54,16 +61,18 @@ export function DashboardTopBar({ knowledgeBaseName }: DashboardTopBarProps) {
           </nav>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="secondary" asChild>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size={isChatPage ? "sm" : "default"} asChild>
             <Link href="/import">
               <Plus className="size-4" />
               添加内容
             </Link>
           </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/chat">开始提问</Link>
-          </Button>
+          {!isChatPage ? (
+            <Button variant="ghost" asChild>
+              <Link href="/chat">开始提问</Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </section>

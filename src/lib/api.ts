@@ -86,3 +86,39 @@ export async function postFormData<TData>(
 
   return parser ? parser(data) : (data as TData);
 }
+
+export async function patchJson<TData, TInput>(
+  input: string,
+  body: TInput,
+  parser?: ResponseParser<TData>,
+): Promise<TData> {
+  const response = await fetch(input, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw await parseErrorResponse(response);
+  }
+
+  const data = await response.json();
+
+  return parser ? parser(data) : (data as TData);
+}
+
+export async function deleteJson<TData>(input: string, parser?: ResponseParser<TData>): Promise<TData> {
+  const response = await fetch(input, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw await parseErrorResponse(response);
+  }
+
+  const data = await response.json();
+
+  return parser ? parser(data) : (data as TData);
+}

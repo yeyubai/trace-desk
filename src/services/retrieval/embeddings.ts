@@ -90,8 +90,13 @@ async function buildRemoteEmbeddings(texts: string[]) {
     });
 
     return response.data.map((item) => resizeVector(item.embedding));
-  } catch {
-    return null;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown embedding request error.";
+
+    throw new Error(
+      `Failed to build remote embeddings. ${message}`,
+    );
   }
 }
 
@@ -108,9 +113,7 @@ export async function buildBatchEmbeddings(texts: string[]) {
     return remoteEmbeddings;
   }
 
-  throw new Error(
-    "Failed to build remote embeddings for live RAG. Check BAILIAN_API_KEY, AI_EMBEDDING_MODEL, and embedding endpoint availability.",
-  );
+  throw new Error("Failed to build remote embeddings for live RAG.");
 }
 
 export async function buildTextEmbedding(text: string) {

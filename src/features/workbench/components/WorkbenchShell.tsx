@@ -1,24 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { FilePlus2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ChatWorkspace } from "@/features/chat/components/ChatWorkspace";
 import { SessionRail } from "@/features/chat/components/SessionRail";
 import type { ChatMessage, ChatSession } from "@/features/chat/types/chat";
 import { useStreamChat } from "@/features/chat/hooks/useChatMutations";
 import type { SendChatMessageFormValues } from "@/features/chat/schemas/send-message";
-import { ImportSourceForm } from "@/features/knowledge/components/ImportSourceForm";
-import {
-  buildImportFeedback,
-  type ImportFeedback,
-} from "@/features/knowledge/lib/build-import-feedback";
-import { SourceDetailPanel } from "@/features/knowledge/components/SourceDetailPanel";
-import { KnowledgeOverviewPanel } from "@/features/knowledge/components/KnowledgeOverviewPanel";
-import { SourceListPanel } from "@/features/knowledge/components/SourceListPanel";
-import {
-  useImportUrlMutation,
-  useUploadSourceMutation,
-} from "@/features/knowledge/hooks/useKnowledgeMutations";
 import { useWorkbenchSnapshotQuery } from "@/features/workbench/hooks/useWorkbenchSnapshotQuery";
 import type { WorkbenchSnapshot } from "@/features/workbench/types/workbench";
 
@@ -64,15 +55,8 @@ export function WorkbenchShell({
     messages: ChatMessage[];
     lastUserInput: string;
   } | null>(null);
-  const [selectedSourceState, setSelectedSourceState] = useState<{
-    sourceId: string;
-    excerpt?: string | null;
-  } | null>(null);
-  const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null);
   const snapshotQuery = useWorkbenchSnapshotQuery(initialSnapshot);
   const streamChat = useStreamChat();
-  const importUrlMutation = useImportUrlMutation();
-  const uploadSourceMutation = useUploadSourceMutation();
 
   const snapshot = snapshotQuery.data;
   const fallbackSessionId = resolveSessionId(
@@ -112,10 +96,6 @@ export function WorkbenchShell({
           messages: streamSession.messages,
         }
       : activeSession;
-  const selectedSource = selectedSourceState
-    ? snapshot.sources.find((source) => source.id === selectedSourceState.sourceId) ?? null
-    : null;
-
   const handleSendMessage = (values: SendChatMessageFormValues) => {
     if (!activeSession) {
       return;
@@ -261,73 +241,35 @@ export function WorkbenchShell({
         </div>
       ) : null}
 
-      <section className="grid h-full min-h-0 gap-5 overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)_280px]">
-        <div className="app-scroll-area space-y-6">
-          <KnowledgeOverviewPanel
-            knowledgeBase={snapshot.knowledgeBase}
-            signals={snapshot.signals}
-          />
-          <ImportSourceForm
-            knowledgeBaseId={snapshot.knowledgeBase.id}
-            isImportingUrl={importUrlMutation.isPending}
-            isUploadingFile={uploadSourceMutation.isPending}
-            feedback={importFeedback}
-            onImportUrl={(values) =>
-              importUrlMutation.mutate({
-                ...values,
-                knowledgeBaseId: snapshot.knowledgeBase.id,
-              }, {
-                onSuccess: (nextSnapshot) => {
-                  const newestSource = nextSnapshot.sources[0] ?? null;
-                  setImportFeedback(buildImportFeedback(newestSource));
-                  setSelectedSourceState(
-                    newestSource
-                      ? {
-                          sourceId: newestSource.id,
-                          excerpt: null,
-                        }
-                      : null,
-                  );
-                },
-                onError: (error) => {
-                  setImportFeedback({
-                    tone: "error",
-                    title: "网页导入失败",
-                    description:
-                      error instanceof Error ? error.message : "网页导入失败，请稍后重试。",
-                  });
-                },
-              })
-            }
-            onUploadFile={(file) =>
-              uploadSourceMutation.mutate({
-                knowledgeBaseId: snapshot.knowledgeBase.id,
-                file,
-              }, {
-                onSuccess: (nextSnapshot) => {
-                  const newestSource = nextSnapshot.sources[0] ?? null;
-                  setImportFeedback(buildImportFeedback(newestSource));
-                  setSelectedSourceState(
-                    newestSource
-                      ? {
-                          sourceId: newestSource.id,
-                          excerpt: null,
-                        }
-                      : null,
-                  );
-                },
-                onError: (error) => {
-                  setImportFeedback({
-                    tone: "error",
-                    title: "文件导入失败",
-                    description:
-                      error instanceof Error ? error.message : "文件导入失败，请稍后重试。",
-                  });
-                },
-              })
-            }
-          />
-        </div>
+      <section className="grid h-full min-h-0 gap-4 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="paper-panel-strong hidden min-h-0 overflow-hidden rounded-[1.7rem] lg:flex lg:flex-col">
+          <div className="flex items-center justify-between border-b border-line/70 px-5 py-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">会话管理</p>
+              <p className="mt-1 text-xs text-muted">切换上下文，保持连续对话。</p>
+            </div>
+            <Button variant="secondary" size="sm" asChild>
+              <Link href="/import">
+                <FilePlus2 className="size-4" />
+                导入
+              </Link>
+            </Button>
+          </div>
+
+          <div className="min-h-0 flex-1 px-4 py-4">
+            <SessionRail
+              sessions={snapshot.sessions}
+              activeSessionId={activeSession?.id ?? ""}
+              onSelectSession={setSelectedSessionId}
+              feedbackByMessage={Object.fromEntries(
+                Object.entries(snapshot.feedbackByMessage).map(([messageId, feedback]) => [
+                  messageId,
+                  feedback.rating,
+                ]),
+              )}
+            />
+          </div>
+        </aside>
 
         <div className="min-h-0 overflow-hidden">
           {displayedSession ? (
@@ -346,47 +288,8 @@ export function WorkbenchShell({
               onSendMessage={handleSendMessage}
               onStopGeneration={handleStopGeneration}
               onRetryLastMessage={handleRetryLastMessage}
-              onSelectCitation={(sourceId, excerpt) => {
-                setSelectedSourceState({
-                  sourceId,
-                  excerpt,
-                });
-              }}
             />
           ) : null}
-        </div>
-
-        <div className="app-scroll-area space-y-6">
-          <SessionRail
-            sessions={snapshot.sessions}
-            activeSessionId={activeSession?.id ?? ""}
-            onSelectSession={setSelectedSessionId}
-            feedbackByMessage={Object.fromEntries(
-              Object.entries(snapshot.feedbackByMessage).map(([messageId, feedback]) => [
-                messageId,
-                feedback.rating,
-              ]),
-            )}
-          />
-          {selectedSource ? (
-            <SourceDetailPanel
-              source={selectedSource}
-              excerpt={selectedSourceState?.excerpt ?? null}
-              onBack={() => setSelectedSourceState(null)}
-            />
-          ) : (
-            <SourceListPanel
-              sources={snapshot.sources}
-              selectedSourceId={selectedSourceState?.sourceId ?? null}
-              limit={6}
-              onSelectSource={(sourceId) =>
-                setSelectedSourceState({
-                  sourceId,
-                  excerpt: null,
-                })
-              }
-            />
-          )}
         </div>
       </section>
     </>

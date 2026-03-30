@@ -5,13 +5,10 @@ import {
   AlertTriangle,
   CircleCheckBig,
   CircleDot,
-  RefreshCcw,
   RotateCcw,
   Sparkles,
   Square,
-  TimerReset,
 } from "lucide-react";
-import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,11 +80,11 @@ function resolveWorkspaceState(args: {
   if (args.isSending) {
     return {
       state: args.sendIntent === "retry" ? "retrying" : "streaming",
-      title: args.sendIntent === "retry" ? "正在重新生成" : "正在流式回答",
+      title: args.sendIntent === "retry" ? "正在重新生成" : "正在生成",
       description:
         args.sendIntent === "retry"
-          ? `继续使用 ${tierMeta.label} 档位，正在重新检索证据并生成上一问的回答。`
-          : `正在使用 ${tierMeta.label} 档位检索证据，并以流式方式返回回答。`,
+          ? `继续使用 ${tierMeta.label} 档位重新组织回答。`
+          : `正在使用 ${tierMeta.label} 档位检索证据并返回回答。`,
       toneClassName: "border-accent/20 bg-accent-soft text-accent-strong",
       Icon: CircleDot,
     } satisfies WorkspaceStateMeta;
@@ -97,7 +94,7 @@ function resolveWorkspaceState(args: {
     return {
       state: "failed",
       title: "回答已中断",
-      description: statusPart.label || "本轮回答未能完整返回，你可以直接重试上一问。",
+      description: statusPart.label || "本轮回答未完整返回。",
       toneClassName: "border-warning/25 bg-warning-soft text-warning",
       Icon: AlertTriangle,
     } satisfies WorkspaceStateMeta;
@@ -107,27 +104,17 @@ function resolveWorkspaceState(args: {
     return {
       state: "refused",
       title: "已明确拒答",
-      description: "当前知识库没有足够可靠的证据，本轮回答不会伪造引用或补全依据。",
+      description: "当前知识库没有足够可靠的证据。",
       toneClassName: "border-warning/25 bg-warning-soft text-warning",
       Icon: AlertTriangle,
     } satisfies WorkspaceStateMeta;
   }
 
-  if (args.sendIntent === "retry") {
-    return {
-      state: "ready",
-      title: "已重新生成",
-      description: `上一问已按 ${tierMeta.label} 档位重新完成回答，可继续追问或再次切换档位。`,
-      toneClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
-      Icon: RefreshCcw,
-    } satisfies WorkspaceStateMeta;
-  }
-
   return {
     state: "ready",
-    title: "引用已就绪",
-    description: `当前会话最近一次完成回答使用 ${tierMeta.label} 档位，可继续追问并沿用上下文。`,
-    toneClassName: "border-line bg-panel text-muted",
+    title: "可继续追问",
+    description: `当前使用 ${tierMeta.label} 档位。`,
+    toneClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
     Icon: CircleCheckBig,
   } satisfies WorkspaceStateMeta;
 }
@@ -160,6 +147,7 @@ export function ChatWorkspace({
     draftFromFollowup?.sessionId === session.id ? draftFromFollowup.value : null;
   const activeSendIntent =
     sendIntent?.sessionId === session.id ? sendIntent.value : null;
+  const hasMessages = session.messages.length > 0;
 
   const mergedPrompts = activeDraftFromFollowup
     ? [
@@ -198,25 +186,21 @@ export function ChatWorkspace({
   }, [initialDraftMessage, session.id]);
 
   return (
-    <Card className="paper-panel-strong editorial-frame h-full min-h-0 overflow-hidden">
-      <CardContent className="flex h-full flex-col gap-4 p-0">
-        <SectionHeading
-          eyebrow="问答"
-          title={session.title}
-          description="围绕当前知识库提问，回答会优先附带引用，并在未命中时明确拒答。"
-          className="px-5 pt-5 sm:px-6 sm:pt-6"
-        />
-
-        <div className="grid gap-3 px-5 sm:px-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-          <div className="rounded-[1.35rem] border border-line/80 bg-panel px-4 py-3">
-            <div className="flex flex-wrap items-center gap-2">
+    <Card className="paper-panel-strong h-full min-h-0 overflow-hidden rounded-[1.8rem]">
+      <CardContent className="flex h-full flex-col p-0">
+        <div className="flex items-center justify-between gap-3 border-b border-line/70 px-5 py-4 sm:px-6">
+          <div className="min-w-0">
+            <p className="truncate text-lg font-medium tracking-[-0.03em] text-foreground">
+              {session.title}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge variant="accent">
                 {tierMeta.label}
                 <span className="ml-1 opacity-80">{tierMeta.badgeLabel}</span>
               </Badge>
               <div
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs",
                   workspaceState.toneClassName,
                 )}
               >
@@ -224,20 +208,15 @@ export function ChatWorkspace({
                 {workspaceState.title}
               </div>
             </div>
-            <p className="mt-2 text-sm text-muted">{workspaceState.description}</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 rounded-full bg-panel px-3 py-2 text-xs text-muted">
-              <TimerReset className="size-3.5 text-accent-strong" />
-              {session.messages.length} 条消息
-            </div>
+          <div className="flex shrink-0 items-center gap-2">
             {isSending ? (
               <Button type="button" variant="ghost" size="sm" onClick={onStopGeneration}>
                 <Square className="size-4" />
-                停止生成
+                停止
               </Button>
-            ) : (
+            ) : hasMessages ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -251,83 +230,88 @@ export function ChatWorkspace({
                 }}
               >
                 <RotateCcw className="size-4" />
-                重试上一问
+                重试
               </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+          <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-4">
+            {hasMessages ? (
+              <>
+                {session.messages.map((message) => (
+                  <ChatMessageCard
+                    key={message.id}
+                    message={message}
+                    onUseFollowup={(value) =>
+                      setDraftFromFollowup({
+                        sessionId: session.id,
+                        value,
+                      })
+                    }
+                    onSelectCitation={onSelectCitation}
+                    onRateMessage={(messageId, rating) => {
+                      setRatings((current) => ({
+                        ...current,
+                        [messageId]: rating,
+                      }));
+                      feedbackMutation.mutate({
+                        messageId,
+                        rating,
+                      });
+                    }}
+                    selectedRating={ratings[message.id] ?? null}
+                  />
+                ))}
+
+                {isSending ? (
+                  <article className="max-w-[88%] rounded-[1.45rem] border border-line bg-panel px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm text-muted">
+                      <CircleDot className="size-4 animate-pulse text-accent-strong" />
+                      {workspaceState.description}
+                    </div>
+                  </article>
+                ) : null}
+                <div ref={bottomAnchorRef} />
+              </>
+            ) : (
+              <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-3 text-center">
+                <p className="text-[11px] font-medium tracking-[0.2em] text-accent-strong uppercase">
+                  新对话
+                </p>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-medium tracking-[-0.04em] text-foreground">
+                    开始第一条消息
+                  </h2>
+                  <p className="max-w-xl text-sm leading-7 text-muted">
+                    左侧管理会话，右侧只保留消息流和输入框。
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-6 pt-2 sm:px-6">
-          <div className="space-y-4">
-            {session.messages.map((message) => (
-              <ChatMessageCard
-                key={message.id}
-                message={message}
-                onUseFollowup={(value) =>
-                  setDraftFromFollowup({
-                    sessionId: session.id,
-                    value,
-                  })
-                }
-                onSelectCitation={onSelectCitation}
-                onRateMessage={(messageId, rating) => {
-                  setRatings((current) => ({
-                    ...current,
-                    [messageId]: rating,
-                  }));
-                  feedbackMutation.mutate({
-                    messageId,
-                    rating,
-                  });
-                }}
-                selectedRating={ratings[message.id] ?? null}
-              />
-            ))}
-
-            {isSending ? (
-              <article className="max-w-[90%] rounded-[1.6rem] border border-line bg-panel-strong p-4 sm:p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent-strong">
-                    <Sparkles className="size-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {activeSendIntent === "retry" ? "正在重新生成回答" : "正在生成回答"}
-                    </p>
-                    <p className="text-xs text-muted">
-                      当前档位：{tierMeta.label} {tierMeta.badgeLabel}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted">
-                  <CircleDot className="size-4 animate-pulse text-accent-strong" />
-                  {activeSendIntent === "retry"
-                    ? "继续沿用上一问，正在重新检索并组织引用。"
-                    : "正在检索相关内容并流式输出回答。"}
-                </div>
-              </article>
-            ) : null}
-            <div ref={bottomAnchorRef} />
+        <div className="border-t border-line/70 bg-panel-strong px-4 pb-4 pt-3 sm:px-6 sm:pb-6">
+          <div className="mx-auto w-full max-w-3xl">
+            <MessageComposer
+              knowledgeBaseId={knowledgeBaseId}
+              sessionId={session.id}
+              defaultModelTier={session.modelTier}
+              suggestedPrompts={mergedPrompts}
+              draftMessage={activeDraftFromFollowup}
+              isSubmitting={isSending}
+              onSubmit={(values) => {
+                setDraftFromFollowup(null);
+                setSendIntent({
+                  sessionId: session.id,
+                  value: "new",
+                });
+                onSendMessage(values);
+              }}
+            />
           </div>
-        </div>
-
-        <div className="border-t border-line bg-panel-strong px-4 pb-4 pt-3 sm:px-6 sm:pb-6">
-          <MessageComposer
-            knowledgeBaseId={knowledgeBaseId}
-            sessionId={session.id}
-            defaultModelTier={session.modelTier}
-            suggestedPrompts={mergedPrompts}
-            draftMessage={activeDraftFromFollowup}
-            isSubmitting={isSending}
-            onSubmit={(values) => {
-              setDraftFromFollowup(null);
-              setSendIntent({
-                sessionId: session.id,
-                value: "new",
-              });
-              onSendMessage(values);
-            }}
-          />
         </div>
       </CardContent>
     </Card>
