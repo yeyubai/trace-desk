@@ -1,8 +1,5 @@
-import { SessionsPageContent } from "@/features/workbench/components/SessionsPageContent";
-import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSnapshot";
+import { redirect } from "next/navigation";
 
-export default async function SessionsPage() {
-  const snapshot = await getWorkbenchSnapshot();
-
-  return <SessionsPageContent initialSnapshot={snapshot} />;
+export default function SessionsPage() {
+  redirect("/chat");
 }

@@ -566,7 +566,6 @@ export function renameChatSession(sessionId: string, title: string) {
       ? {
           ...session,
           title: normalizedTitle,
-          updatedAt: new Date().toISOString(),
         }
       : session,
   );

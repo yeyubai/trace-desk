@@ -420,7 +420,7 @@ export async function renameChatSession(sessionId: string, title: string) {
   await pool.query(
     `
       UPDATE chat_session
-      SET title = $2, updated_at = NOW()
+      SET title = $2
       WHERE id = $1
     `,
     [sessionId, normalizedTitle],

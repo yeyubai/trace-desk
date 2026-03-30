@@ -127,12 +127,6 @@ export function OverviewPageContent({
             sessions={snapshot.sessions}
             activeSessionId={selectedSessionId}
             onSelectSession={setSelectedSessionId}
-            feedbackByMessage={Object.fromEntries(
-              Object.entries(snapshot.feedbackByMessage).map(([messageId, feedback]) => [
-                messageId,
-                feedback.rating,
-              ]),
-            )}
           />
         </div>
       </section>

@@ -261,12 +261,6 @@ export function WorkbenchShell({
               sessions={snapshot.sessions}
               activeSessionId={activeSession?.id ?? ""}
               onSelectSession={setSelectedSessionId}
-              feedbackByMessage={Object.fromEntries(
-                Object.entries(snapshot.feedbackByMessage).map(([messageId, feedback]) => [
-                  messageId,
-                  feedback.rating,
-                ]),
-              )}
             />
           </div>
         </aside>

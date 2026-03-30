@@ -72,7 +72,10 @@ export function ChatMessageCard({
               return (
                 <div
                   key={part.id}
-                  className={cn("markdown-body", isAssistant ? "text-foreground" : "text-white")}
+                  className={cn(
+                    "markdown-body",
+                    isAssistant ? "text-foreground" : "text-white [&_*]:text-white",
+                  )}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {part.markdown}

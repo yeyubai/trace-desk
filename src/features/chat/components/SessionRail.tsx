@@ -1,17 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  MODEL_TIER_META,
-  type ChatFeedbackRating,
-  type ChatSession,
-} from "@/features/chat/types/chat";
+import type { ChatSession } from "@/features/chat/types/chat";
 import { deleteJson, patchJson } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { formatRelativeTime } from "@/lib/formatters";
@@ -21,14 +15,12 @@ type SessionRailProps = {
   sessions: ChatSession[];
   activeSessionId: string;
   onSelectSession: (sessionId: string) => void;
-  feedbackByMessage?: Record<string, ChatFeedbackRating>;
 };
 
 export function SessionRail({
   sessions,
   activeSessionId,
   onSelectSession,
-  feedbackByMessage = {},
 }: SessionRailProps) {
   const queryClient = useQueryClient();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -71,29 +63,22 @@ export function SessionRail({
       <SectionHeading
         eyebrow="会话"
         title="最近会话"
-        description={`共 ${sortedSessions.length} 个会话。`}
+        description={`按最近一次对话时间排序，共 ${sortedSessions.length} 个。`}
       />
 
       <div className="mt-4 flex-1 space-y-2 overflow-y-auto pr-1">
         {sortedSessions.map((session) => {
           const isActive = session.id === activeSessionId;
           const isEditing = editingSessionId === session.id;
-          const tierMeta = MODEL_TIER_META[session.modelTier];
-          const assistantReplyCount = session.messages.filter(
-            (message) => message.role === "assistant",
-          ).length;
-          const reviewedCount = session.messages.filter(
-            (message) => message.role === "assistant" && Boolean(feedbackByMessage[message.id]),
-          ).length;
 
           return (
             <div
               key={session.id}
               className={cn(
-                "rounded-[1rem] border p-3 transition-colors",
+                "group rounded-[0.95rem] border p-3 transition-colors",
                 isActive
-                  ? "border-accent/70 bg-accent-soft/80"
-                  : "border-transparent bg-white/60 hover:border-line hover:bg-white/92",
+                  ? "border-accent/65 bg-accent-soft/70"
+                  : "border-transparent bg-white/55 hover:border-line hover:bg-white/88",
               )}
             >
               <div className="flex items-start gap-2">
@@ -138,7 +123,7 @@ export function SessionRail({
                     />
                   ) : (
                     <>
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-start justify-between gap-3">
                         <p
                           className={cn(
                             "truncate text-sm font-medium",
@@ -149,27 +134,23 @@ export function SessionRail({
                         </p>
                         <span
                           suppressHydrationWarning
-                          className={cn("shrink-0 text-[11px]", isActive ? "text-accent-strong" : "text-muted")}
+                          className={cn(
+                            "shrink-0 text-[11px]",
+                            isActive ? "text-accent-strong" : "text-muted",
+                          )}
                         >
                           {formatRelativeTime(session.updatedAt)}
                         </span>
                       </div>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge variant={isActive ? "accent" : "neutral"}>{tierMeta.label}</Badge>
-                        <span className="text-[11px] text-muted">
-                          {reviewedCount}/{assistantReplyCount || 0} 已评
-                        </span>
-                      </div>
-
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
+                      <p className="mt-1 line-clamp-2 text-xs leading-6 text-muted">
                         {session.lastPreview || "继续沿用当前上下文开始提问。"}
                       </p>
                     </>
                   )}
                 </button>
 
-                <div className="flex shrink-0 items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
                   <Button
                     type="button"
                     variant="ghost"
@@ -196,16 +177,6 @@ export function SessionRail({
             </div>
           );
         })}
-      </div>
-
-      <div className="mt-4 border-t border-line/70 pt-4">
-        <Link
-          href="/import"
-          className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
-        >
-          <MoreHorizontal className="size-4" />
-          去导入页添加新内容
-        </Link>
       </div>
     </div>
   );

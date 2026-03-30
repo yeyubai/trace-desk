@@ -153,7 +153,6 @@ function buildDiagnostics(args: {
 
   const retrievalGate: "eligible" | "blocked" =
     contentQuality === "strong" &&
-    args.extractionMode !== "body-fallback" &&
     args.extractionMode !== "pdf-unparsed"
       ? "eligible"
       : "blocked";
@@ -291,6 +290,13 @@ function buildRetrievalState(args: {
     return {
       status: "unavailable" as const,
       detail: `来源已切块，但已被检索门控隔离：${args.diagnostics.retrievalGateReason ?? "内容质量不足"}。`,
+    };
+  }
+
+  if (args.diagnostics.extractionMode === "body-fallback") {
+    return {
+      status: "retrievable" as const,
+      detail: `已生成 ${args.chunkCount} 个分块，可参与问答检索，但因整页抽取噪声较高会在排序中降权。`,
     };
   }
 
