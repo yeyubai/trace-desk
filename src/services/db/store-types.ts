@@ -4,7 +4,7 @@ import type {
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
 
-export const DEFAULT_KNOWLEDGE_BASE_ID = "kb-trace-desk";
+export const DEFAULT_KNOWLEDGE_BASE_ID = "b63f23f2-13d2-4e1d-9f39-2cc7b6f71a11";
 export const DEFAULT_KNOWLEDGE_BASE_NAME = "Trace Desk 首版知识库";
 export const DEFAULT_KNOWLEDGE_BASE_DESCRIPTION =
   "围绕导入、引用、拒答和评测闭环构建的首版工作台样例知识库。";
@@ -15,7 +15,7 @@ export const DEFAULT_KNOWLEDGE_BASE_FOCUS_AREAS = [
   "拒答策略",
   "会话评测",
 ];
-export const DEFAULT_SESSION_ID = "session-default";
+export const DEFAULT_SESSION_ID = "8ef6a0f7-1d2d-4e4c-8b64-0f8b0f62cb31";
 export const DEFAULT_SESSION_TITLE = "新会话";
 
 export type SourceChunkRecord = {

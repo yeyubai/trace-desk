@@ -17,6 +17,12 @@ import type {
   SourceDocumentInsert,
   WorkbenchStoreSnapshot,
 } from "@/services/db/store-types";
+import {
+  DEFAULT_KNOWLEDGE_BASE_DESCRIPTION,
+  DEFAULT_KNOWLEDGE_BASE_FOCUS_AREAS,
+  DEFAULT_KNOWLEDGE_BASE_ID,
+  DEFAULT_KNOWLEDGE_BASE_NAME,
+} from "@/services/db/store-types";
 
 type MockWorkbenchState = WorkbenchStoreSnapshot;
 
@@ -84,14 +90,14 @@ function createSeedState(): MockWorkbenchState {
   const yesterday = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
 
   const knowledgeBase: KnowledgeBaseOverview = {
-    id: "kb-trace-desk",
-    name: "Trace Desk 首版知识库",
-    description: "围绕导入、引用、拒答和评测闭环构建的首版工作台样例知识库。",
+    id: DEFAULT_KNOWLEDGE_BASE_ID,
+    name: DEFAULT_KNOWLEDGE_BASE_NAME,
+    description: DEFAULT_KNOWLEDGE_BASE_DESCRIPTION,
     sourceCount: 5,
     chunkCount: 5,
     lastIndexedAt: thirtyMinutesAgo,
     retrievalReadiness: "引用优先，未命中明确拒答",
-    focusAreas: ["导入流程", "引用展示", "拒答策略", "会话评测"],
+    focusAreas: DEFAULT_KNOWLEDGE_BASE_FOCUS_AREAS,
   };
 
   const sources: SourceDocumentSummary[] = [
