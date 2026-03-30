@@ -1,0 +1,75 @@
+{
+  "sources": [
+    {
+      "id": "src-guide-rag",
+      "knowledgeBaseId": "kb-trace-desk",
+      "title": "RAG 接入规范 v1.2",
+      "kind": "markdown",
+      "status": "available",
+      "retrievalStatus": "retrievable",
+      "retrievalDetail": "已生成 2 个分块，可直接参与问答检索。",
+      "summary": "明确要求知识库回答必须带来源引用，检索未命中时明确拒答。",
+      "updatedAt": "2026-03-29T00:00:00.000Z",
+      "chunkCount": 2,
+      "citationLabel": "[RAG-1]",
+      "diagnostics": {
+        "extractionMode": "markdown-seed",
+        "extractedTextLength": 820,
+        "contentQuality": "strong",
+        "retrievalGate": "eligible",
+        "warnings": [],
+        "chunkPreviews": []
+      },
+      "duplicateOf": null
+    },
+    {
+      "id": "src-eval-weekly",
+      "knowledgeBaseId": "kb-trace-desk",
+      "title": "会话评测周报",
+      "kind": "url",
+      "status": "available",
+      "retrievalStatus": "unavailable",
+      "retrievalDetail": "网页已切块，但由于正文过短，已被检索质量门控隔离。",
+      "summary": "整理了质量标注、反馈记录和下一阶段评测重点。",
+      "updatedAt": "2026-03-29T00:00:00.000Z",
+      "chunkCount": 1,
+      "citationLabel": "[EVAL-3]",
+      "diagnostics": {
+        "extractionMode": "url-seed",
+        "extractedTextLength": 46,
+        "contentQuality": "thin",
+        "retrievalGate": "blocked",
+        "retrievalGateReason": "正文过短，无法稳定支持企业级问答",
+        "warnings": ["正文偏短，可能只抓到了摘要、导航或局部内容。"],
+        "chunkPreviews": []
+      },
+      "duplicateOf": null
+    }
+  ],
+  "sourceChunks": [
+    {
+      "id": "chunk-rag-1",
+      "knowledgeBaseId": "kb-trace-desk",
+      "sourceId": "src-guide-rag",
+      "excerpt": "知识库回答必须显示来源引用，未命中时明确拒答。",
+      "content": "RAG 接入规范要求所有知识库回答都展示来源引用，并在未命中检索结果时明确拒答，不能伪造依据。",
+      "keywords": ["引用", "拒答", "知识库", "依据"]
+    },
+    {
+      "id": "chunk-rag-2",
+      "knowledgeBaseId": "kb-trace-desk",
+      "sourceId": "src-guide-rag",
+      "excerpt": "服务端要把检索、重排、生成、引用组装拆成显式步骤。",
+      "content": "服务端需要把检索、重排、生成、引用组装拆成显式步骤，避免单个黑盒函数吞掉可信度校验。",
+      "keywords": ["检索", "重排", "引用组装", "显式步骤"]
+    },
+    {
+      "id": "chunk-eval-1",
+      "knowledgeBaseId": "kb-trace-desk",
+      "sourceId": "src-eval-weekly",
+      "excerpt": "评测优先检查引用准确性、拒答一致性和多轮追问体验。",
+      "content": "评测周报建议优先检查引用准确性、拒答一致性、多轮追问体验和模型切换后的稳定性。",
+      "keywords": ["评测", "引用准确性", "拒答一致性", "模型切换"]
+    }
+  ]
+}

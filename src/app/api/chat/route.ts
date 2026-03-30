@@ -15,7 +15,7 @@ import { streamGroundedAnswer } from "@/services/ai/generate-grounded-answer";
 import {
   appendMessagesToSession,
   getChatSessionById,
-} from "@/services/db/mock-workbench-store";
+} from "@/services/db/workbench-store";
 import {
   buildRetrievalDiagnostics,
   retrieveKnowledgeMatches,
@@ -35,19 +35,19 @@ export async function POST(request: Request) {
     const userMessage = buildUserMessage(payload.message);
     const assistantMessageId = crypto.randomUUID();
     const draftAssistantMessage = buildAssistantDraftMessage(assistantMessageId);
-    const currentSession = getChatSessionById(payload.sessionId);
+    const currentSession = await getChatSessionById(payload.sessionId);
     const recentMessages = currentSession?.messages ?? [];
     const recentConversationContext = buildRecentConversationContext(recentMessages);
     const retrievalQuery = buildRetrievalQuery({
       question: payload.message,
       recentMessages,
     });
-    const retrievedMatches = retrieveKnowledgeMatches({
+    const retrievedMatches = await retrieveKnowledgeMatches({
       knowledgeBaseId: payload.knowledgeBaseId,
       query: retrievalQuery,
     });
     const rerankedMatches = rerankKnowledgeMatches(retrievedMatches);
-    const retrievalDiagnostics = buildRetrievalDiagnostics({
+    const retrievalDiagnostics = await buildRetrievalDiagnostics({
       knowledgeBaseId: payload.knowledgeBaseId,
       query: retrievalQuery,
       matchedChunkCount: rerankedMatches.length,
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
             throw new Error("未能生成有效回答");
           }
 
-          appendMessagesToSession({
+          await appendMessagesToSession({
             sessionId: payload.sessionId,
             modelTier: payload.modelTier,
             userMessage,
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
             serializeEvent({
               type: "complete",
               assistantMessage: finalAssistantMessage,
-              snapshot: getWorkbenchSnapshot(),
+              snapshot: await getWorkbenchSnapshot(),
             }),
           );
           controller.close();

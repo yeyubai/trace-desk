@@ -8,18 +8,10 @@ function buildDependencyStatuses(): RuntimeDependency[] {
     {
       id: "runtime-db",
       label: "PostgreSQL / pgvector",
-      detail:
-        env.APP_DATA_MODE === "mock"
-          ? "当前走 mock 数据层，已保留真实数据库接入口。"
-          : env.DATABASE_URL
-            ? "已提供 DATABASE_URL，可继续接 Repository 与迁移脚本。"
-            : "缺少 DATABASE_URL，真实数据模式无法启用。",
-      status:
-        env.APP_DATA_MODE === "mock"
-          ? "mock"
-          : env.DATABASE_URL
-            ? "configured"
-            : "missing",
+      detail: env.DATABASE_URL
+        ? "已提供 DATABASE_URL，可直接运行真实入库与 pgvector 检索。"
+        : "缺少 DATABASE_URL，live RAG 无法启动。",
+      status: env.DATABASE_URL ? "configured" : "missing",
     },
     {
       id: "runtime-redis",
@@ -42,18 +34,10 @@ function buildDependencyStatuses(): RuntimeDependency[] {
     {
       id: "runtime-ai",
       label: "阿里云百炼",
-      detail:
-        env.APP_AI_MODE === "mock"
-          ? "当前走 mock 回答编排，可随时切到百炼兼容接口。"
-          : env.BAILIAN_API_KEY
-            ? "已提供百炼 API Key，支持按模型档位映射。"
-            : "缺少 BAILIAN_API_KEY。",
-      status:
-        env.APP_AI_MODE === "mock"
-          ? "mock"
-          : env.BAILIAN_API_KEY
-            ? "configured"
-            : "missing",
+      detail: env.BAILIAN_API_KEY
+        ? "已提供百炼 API Key，可用于 embedding 与 grounded answer。"
+        : "缺少 BAILIAN_API_KEY，真实生成与 embedding 不可用。",
+      status: env.BAILIAN_API_KEY ? "configured" : "missing",
     },
   ];
 }
@@ -78,11 +62,11 @@ export function getRuntimeOverview(): RuntimeOverview {
       missingCount,
       mockCount,
       ready: missingCount === 0,
-      label: missingCount === 0 ? "全部就绪" : `${missingCount} 项待补`,
+      label: missingCount === 0 ? "全部就绪" : `${missingCount} 项待配`,
       detail:
         missingCount === 0
-          ? "所有关键依赖都已达到当前工作台所需状态。"
-          : "当前工作台仍有依赖未配置，但 mock 模式仍可继续推进页面与交互开发。",
+          ? "真实 RAG 运行所需的关键依赖均已就绪。"
+          : "当前仍有依赖未配置，系统不会回退到 mock，请先补齐 live 运行条件。",
     },
   };
 }

@@ -5,6 +5,7 @@ import type {
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
 import { splitSourceWithLangChain } from "@/services/rag/langchain-splitting";
+import { buildBatchEmbeddings } from "@/services/retrieval/embeddings";
 
 const MAX_KEYWORD_COUNT = 24;
 
@@ -14,6 +15,7 @@ function buildChunk(input: {
   excerpt: string;
   content: string;
   keywords: string[];
+  embedding: number[] | null;
 }) {
   return {
     id: crypto.randomUUID(),
@@ -22,6 +24,7 @@ function buildChunk(input: {
     excerpt: input.excerpt,
     content: input.content,
     keywords: input.keywords,
+    embedding: input.embedding,
   };
 }
 
@@ -148,10 +151,29 @@ function buildDiagnostics(args: {
     warnings.push("当前没有提取到足够正文，无法支撑可靠检索。");
   }
 
+  const retrievalGate: "eligible" | "blocked" =
+    contentQuality === "strong" &&
+    args.extractionMode !== "body-fallback" &&
+    args.extractionMode !== "pdf-unparsed"
+      ? "eligible"
+      : "blocked";
+  const retrievalGateReason =
+    retrievalGate === "blocked"
+      ? contentQuality === "empty"
+        ? "未提取到足够正文"
+        : args.extractionMode === "pdf-unparsed"
+          ? "PDF 暂未解析正文"
+          : args.extractionMode === "body-fallback"
+            ? "网页抽取已退化为整页 body，噪声风险较高"
+            : "正文过短，无法稳定支持企业级问答"
+      : undefined;
+
   return {
     extractionMode: args.extractionMode,
     extractedTextLength,
     contentQuality,
+    retrievalGate,
+    ...(retrievalGateReason ? { retrievalGateReason } : {}),
     warnings,
     chunkPreviews: args.chunks.slice(0, 3).map((chunk) => ({
       id: chunk.id,
@@ -229,8 +251,9 @@ async function buildChunksFromText(input: {
     extractionMode: input.extractionMode,
     sourceUrl: input.sourceUrl,
   });
+  const embeddings = await buildBatchEmbeddings(langChainChunks.map((chunk) => chunk.content));
 
-  return langChainChunks.map((chunk) =>
+  return langChainChunks.map((chunk, index) =>
     buildChunk({
       knowledgeBaseId: input.knowledgeBaseId,
       sourceId: input.sourceId,
@@ -240,8 +263,41 @@ async function buildChunksFromText(input: {
         text: chunk.content,
         seedKeywords: input.seedKeywords,
       }),
+      embedding: embeddings[index] ?? null,
     }),
   );
+}
+
+function buildRetrievalState(args: {
+  diagnostics: ReturnType<typeof buildDiagnostics>;
+  chunkCount: number;
+  kind: SourceDocumentKind;
+}) {
+  if (args.kind === "pdf") {
+    return {
+      status: "stored_only" as const,
+      detail: "PDF 已保存到知识库，但当前版本暂未解析正文，因此不能参与问答检索。",
+    };
+  }
+
+  if (args.chunkCount <= 0) {
+    return {
+      status: "unavailable" as const,
+      detail: "来源已保存，但当前未提取到可检索正文。",
+    };
+  }
+
+  if (args.diagnostics.retrievalGate === "blocked") {
+    return {
+      status: "unavailable" as const,
+      detail: `来源已切块，但已被检索门控隔离：${args.diagnostics.retrievalGateReason ?? "内容质量不足"}。`,
+    };
+  }
+
+  return {
+    status: "retrievable" as const,
+    detail: `已生成 ${args.chunkCount} 个分块，可直接参与问答检索。`,
+  };
 }
 
 function buildFileCitationLabel(fileName: string) {
@@ -356,11 +412,21 @@ export async function createImportedUrlSource(input: ImportUrlInput) {
     sourceUrl: input.url,
   });
   const status = chunks.length > 0 ? "available" : "failed";
-  const retrievalStatus = chunks.length > 0 ? "retrievable" : "unavailable";
+  const diagnostics = buildDiagnostics({
+    extractionMode: urlDocument.extractionMode,
+    extractedText: urlDocument.text,
+    chunks,
+    warnings: urlDocument.warnings,
+  });
+  const retrieval = buildRetrievalState({
+    diagnostics,
+    chunkCount: chunks.length,
+    kind: "url",
+  });
   const summary =
-    chunks.length > 0
+    retrieval.status === "retrievable"
       ? `已抓取 ${parsedUrl.hostname} 网页正文，并生成 ${chunks.length} 个可检索分块。`
-      : `已抓取 ${parsedUrl.hostname}，但暂未提取到可检索正文。`;
+      : `已抓取 ${parsedUrl.hostname}，但当前未通过检索质量门控。`;
 
   return {
     source: {
@@ -369,22 +435,14 @@ export async function createImportedUrlSource(input: ImportUrlInput) {
       title,
       kind: "url" as const,
       status,
-      retrievalStatus,
-      retrievalDetail:
-        chunks.length > 0
-          ? `网页正文已抓取完成，并生成 ${chunks.length} 个分块，可参与问答检索。`
-          : "网页已保存到来源列表，但当前未提取到可检索正文。",
+      retrievalStatus: retrieval.status,
+      retrievalDetail: retrieval.detail,
       summary,
       updatedAt,
       chunkCount: chunks.length,
       citationLabel: buildUrlCitationLabel(title),
       url: input.url,
-      diagnostics: buildDiagnostics({
-        extractionMode: urlDocument.extractionMode,
-        extractedText: urlDocument.text,
-        chunks,
-        warnings: urlDocument.warnings,
-      }),
+      diagnostics,
       duplicateOf: null,
     } satisfies SourceDocumentSummary,
     chunks,
@@ -407,6 +465,13 @@ export async function createUploadedFileSource(input: {
   }
 
   if (kind === "pdf") {
+    const diagnostics = buildDiagnostics({
+      extractionMode: "pdf-unparsed",
+      extractedText: "",
+      chunks: [],
+      warnings: ["当前版本尚未解析 PDF 正文。"],
+    });
+
     return {
       source: {
         id: sourceId,
@@ -420,12 +485,7 @@ export async function createUploadedFileSource(input: {
         updatedAt,
         chunkCount: 0,
         citationLabel: buildFileCitationLabel(input.fileName),
-        diagnostics: buildDiagnostics({
-          extractionMode: "pdf-unparsed",
-          extractedText: "",
-          chunks: [],
-          warnings: ["当前版本尚未解析 PDF 正文。"],
-        }),
+        diagnostics,
         duplicateOf: null,
       } satisfies SourceDocumentSummary,
       chunks: [],
@@ -445,11 +505,20 @@ export async function createUploadedFileSource(input: {
     extractionMode: kind === "markdown" ? "markdown-stripped" : "plain-text",
   });
   const status = chunks.length > 0 ? "available" : "failed";
-  const retrievalStatus = chunks.length > 0 ? "retrievable" : "unavailable";
+  const diagnostics = buildDiagnostics({
+    extractionMode: kind === "markdown" ? "markdown-stripped" : "plain-text",
+    extractedText: normalizedContent,
+    chunks,
+  });
+  const retrieval = buildRetrievalState({
+    diagnostics,
+    chunkCount: chunks.length,
+    kind,
+  });
   const summary =
-    chunks.length > 0
+    retrieval.status === "retrievable"
       ? `已解析文件正文，并生成 ${chunks.length} 个可检索分块，当前大小 ${(input.fileSize / 1024).toFixed(1)} KB。`
-      : "文件已上传，但暂未提取到可检索正文。";
+      : "文件已上传，但当前未通过检索质量门控。";
 
   return {
     source: {
@@ -458,20 +527,13 @@ export async function createUploadedFileSource(input: {
       title: input.fileName,
       kind,
       status,
-      retrievalStatus,
-      retrievalDetail:
-        chunks.length > 0
-          ? `已生成 ${chunks.length} 个分块，可直接参与问答检索。`
-          : "文件已保存，但当前未提取到可检索正文。",
+      retrievalStatus: retrieval.status,
+      retrievalDetail: retrieval.detail,
       summary,
       updatedAt,
       chunkCount: chunks.length,
       citationLabel: buildFileCitationLabel(input.fileName),
-      diagnostics: buildDiagnostics({
-        extractionMode: kind === "markdown" ? "markdown-stripped" : "plain-text",
-        extractedText: normalizedContent,
-        chunks,
-      }),
+      diagnostics,
       duplicateOf: null,
     } satisfies SourceDocumentSummary,
     chunks,

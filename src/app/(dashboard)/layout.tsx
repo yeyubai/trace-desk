@@ -4,12 +4,12 @@ import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSn
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const snapshot = getWorkbenchSnapshot();
+  const snapshot = await getWorkbenchSnapshot();
 
   return (
     <main className="mx-auto flex h-[100dvh] w-full max-w-[1540px] flex-col gap-4 overflow-hidden px-4 py-4 sm:px-6 lg:px-8">

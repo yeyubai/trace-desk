@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
-import { saveResponseFeedback } from "@/services/db/mock-workbench-store";
+import { saveResponseFeedback } from "@/services/db/workbench-store";
 
 const feedbackSchema = z.object({
   messageId: z.string().min(1),
@@ -11,7 +11,7 @@ const feedbackSchema = z.object({
 export async function POST(request: Request) {
   try {
     const payload = feedbackSchema.parse(await request.json());
-    saveResponseFeedback({
+    await saveResponseFeedback({
       ...payload,
       updatedAt: new Date().toISOString(),
     });

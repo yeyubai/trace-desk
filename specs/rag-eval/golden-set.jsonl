@@ -1,0 +1,4 @@
+{"id":"hit-rag-citation-rule","question":"知识库回答为什么必须显示来源引用？","knowledgeBaseId":"kb-trace-desk","type":"hit","expectedSourceTitle":"RAG 接入规范 v1.2"}
+{"id":"citation-rag-label","question":"知识库回答为什么必须显示来源引用？","knowledgeBaseId":"kb-trace-desk","type":"citation","expectedCitationLabel":"[RAG-1]"}
+{"id":"miss-nonsense-query","question":"什么是 blorple qwerty 对齐指标？","knowledgeBaseId":"kb-trace-desk","type":"miss"}
+{"id":"blocked-thin-source","question":"总结会话评测周报的跟进项。","knowledgeBaseId":"kb-trace-desk","type":"blocked","blockedSourceId":"src-eval-weekly"}

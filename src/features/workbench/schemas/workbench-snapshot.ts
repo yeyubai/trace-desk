@@ -84,6 +84,8 @@ const sourceDocumentSummarySchema = z.object({
     extractionMode: z.string().trim().min(1),
     extractedTextLength: z.number().int().nonnegative(),
     contentQuality: sourceContentQualitySchema,
+    retrievalGate: z.enum(["eligible", "blocked"]),
+    retrievalGateReason: z.string().trim().min(1).optional(),
     warnings: z.array(z.string().trim().min(1)),
     chunkPreviews: z.array(
       z.object({

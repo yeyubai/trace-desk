@@ -3,7 +3,7 @@ import {
   createUploadedFileSource,
   inferSourceKindFromFileName,
 } from "@/features/knowledge/server/import-knowledge-source";
-import { addSourceDocument } from "@/services/db/mock-workbench-store";
+import { addSourceDocument } from "@/services/db/workbench-store";
 import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSnapshot";
 
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
@@ -42,9 +42,9 @@ export async function POST(request: Request) {
       knowledgeBaseId,
     });
 
-    addSourceDocument(sourceDocument);
+    await addSourceDocument(sourceDocument);
 
-    return NextResponse.json(getWorkbenchSnapshot());
+    return NextResponse.json(await getWorkbenchSnapshot());
   } catch (error) {
     return NextResponse.json(
       {

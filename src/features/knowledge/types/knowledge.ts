@@ -14,6 +14,8 @@ export type SourceDiagnostics = {
   extractionMode: string;
   extractedTextLength: number;
   contentQuality: SourceContentQuality;
+  retrievalGate: "eligible" | "blocked";
+  retrievalGateReason?: string;
   warnings: string[];
   chunkPreviews: SourceChunkPreview[];
 };

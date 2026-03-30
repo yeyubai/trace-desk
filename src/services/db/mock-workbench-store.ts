@@ -4,37 +4,21 @@ import type {
   ChatMessage,
   ChatSession,
   CitationItem,
-  ModelTier,
 } from "@/features/chat/types/chat";
 import type {
   SourceContentQuality,
   KnowledgeBaseOverview,
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
+import type {
+  FeedbackRecord,
+  SessionAppendArgs,
+  SourceChunkRecord,
+  SourceDocumentInsert,
+  WorkbenchStoreSnapshot,
+} from "@/services/db/store-types";
 
-type SourceChunkRecord = {
-  id: string;
-  knowledgeBaseId: string;
-  sourceId: string;
-  excerpt: string;
-  content: string;
-  keywords: string[];
-};
-
-type FeedbackRecord = {
-  messageId: string;
-  rating: "thumbs_up" | "thumbs_down";
-  note?: string;
-  updatedAt: string;
-};
-
-type MockWorkbenchState = {
-  knowledgeBase: KnowledgeBaseOverview;
-  sources: SourceDocumentSummary[];
-  sourceChunks: SourceChunkRecord[];
-  sessions: ChatSession[];
-  feedbackEntries: FeedbackRecord[];
-};
+type MockWorkbenchState = WorkbenchStoreSnapshot;
 
 const MOCK_STATE_FILE = path.join(
   process.cwd(),
@@ -117,7 +101,7 @@ function createSeedState(): MockWorkbenchState {
       title: "RAG 接入规范 v1.2",
       kind: "markdown",
       status: "available",
-      retrievalStatus: "retrievable",
+      retrievalStatus: "unavailable",
       retrievalDetail: "已生成 2 个分块，可直接参与问答检索。",
       summary: "明确要求回答必须带引用来源，检索未命中时给出拒答说明。",
       updatedAt: thirtyMinutesAgo,
@@ -127,6 +111,7 @@ function createSeedState(): MockWorkbenchState {
         extractionMode: "markdown-seed",
         extractedTextLength: 82,
         contentQuality: "strong",
+        retrievalGate: "eligible",
         warnings: [],
         chunkPreviews: [
           {
@@ -159,6 +144,7 @@ function createSeedState(): MockWorkbenchState {
         extractionMode: "text-seed",
         extractedTextLength: 78,
         contentQuality: "strong",
+        retrievalGate: "eligible",
         warnings: [],
         chunkPreviews: [
           {
@@ -191,6 +177,8 @@ function createSeedState(): MockWorkbenchState {
         extractionMode: "pdf-unparsed",
         extractedTextLength: 0,
         contentQuality: "empty",
+        retrievalGate: "blocked",
+        retrievalGateReason: "PDF 暂未解析正文",
         warnings: ["当前版本尚未解析 PDF 正文。"],
         chunkPreviews: [],
       },
@@ -213,6 +201,8 @@ function createSeedState(): MockWorkbenchState {
         extractionMode: "url-seed",
         extractedTextLength: 46,
         contentQuality: "thin",
+        retrievalGate: "blocked",
+        retrievalGateReason: "正文过短，无法稳定支持企业级问答",
         warnings: ["正文偏短，可能只抓到了摘要、导航或局部内容。"],
         chunkPreviews: [
           {
@@ -241,6 +231,8 @@ function createSeedState(): MockWorkbenchState {
         extractionMode: "pending",
         extractedTextLength: 0,
         contentQuality: "empty",
+        retrievalGate: "blocked",
+        retrievalGateReason: "未提取到足够正文",
         warnings: ["网页仍在处理中，暂时还没有正文分块。"],
         chunkPreviews: [],
       },
@@ -257,6 +249,7 @@ function createSeedState(): MockWorkbenchState {
       content:
         "RAG 接入规范要求所有知识库回答都展示来源引用，并在未命中检索结果时明确拒答，不能伪造依据。",
       keywords: ["引用", "拒答", "知识库", "依据"],
+      embedding: null,
     },
     {
       id: "chunk-rag-2",
@@ -266,6 +259,7 @@ function createSeedState(): MockWorkbenchState {
       content:
         "服务端需要把检索、重排、生成、引用组装拆成显式步骤，避免单个黑盒函数吞掉可信度校验。",
       keywords: ["检索", "重排", "引用组装", "显式步骤"],
+      embedding: null,
     },
     {
       id: "chunk-chat-1",
@@ -275,6 +269,7 @@ function createSeedState(): MockWorkbenchState {
       content:
         "对话消息应按 parts 设计，支持 text、citations、status、followups 等多种片段类型，而不是只有单一 content 字段。",
       keywords: ["parts", "消息结构", "text", "citations", "status", "followups"],
+      embedding: null,
     },
     {
       id: "chunk-chat-2",
@@ -284,6 +279,7 @@ function createSeedState(): MockWorkbenchState {
       content:
         "流式输出、工具调用和失败状态必须显式建模，不能把状态信息混进普通文本里。",
       keywords: ["流式", "工具状态", "失败状态", "状态"],
+      embedding: null,
     },
     {
       id: "chunk-eval-1",
@@ -293,6 +289,7 @@ function createSeedState(): MockWorkbenchState {
       content:
         "评测周报建议优先检查引用准确性、拒答一致性、多轮追问体验和模型切换后的稳定性。",
       keywords: ["评测", "引用准确性", "拒答一致性", "模型切换"],
+      embedding: null,
     },
   ];
 
@@ -416,6 +413,18 @@ function buildFallbackDiagnostics(
             : "plain-text",
     extractedTextLength,
     contentQuality,
+    retrievalGate:
+      (contentQuality === "strong" ? "eligible" : "blocked") as "eligible" | "blocked",
+    ...(contentQuality === "strong"
+      ? {}
+      : {
+          retrievalGateReason:
+            source.kind === "pdf"
+              ? "PDF 暂未解析正文"
+              : contentQuality === "thin"
+                ? "正文过短，无法稳定支持企业级问答"
+                : "未提取到足够正文",
+        }),
     warnings,
     chunkPreviews: chunks.slice(0, 3).map((chunk) => ({
       id: chunk.id,
@@ -425,20 +434,50 @@ function buildFallbackDiagnostics(
   };
 }
 
+function normalizeSourceSummary(
+  source: SourceDocumentSummary,
+  chunks: SourceChunkRecord[],
+): SourceDocumentSummary {
+  const fallbackDiagnostics = buildFallbackDiagnostics(source, chunks);
+  const diagnostics = source.diagnostics;
+
+  if (
+    diagnostics &&
+    (diagnostics.retrievalGate === "eligible" || diagnostics.retrievalGate === "blocked")
+  ) {
+    return source;
+  }
+
+  return {
+    ...source,
+    diagnostics: {
+      ...fallbackDiagnostics,
+      ...(diagnostics
+        ? {
+            extractionMode: diagnostics.extractionMode || fallbackDiagnostics.extractionMode,
+            extractedTextLength:
+              diagnostics.extractedTextLength ?? fallbackDiagnostics.extractedTextLength,
+            contentQuality: diagnostics.contentQuality || fallbackDiagnostics.contentQuality,
+            warnings:
+              diagnostics.warnings && diagnostics.warnings.length > 0
+                ? diagnostics.warnings
+                : fallbackDiagnostics.warnings,
+            chunkPreviews:
+              diagnostics.chunkPreviews && diagnostics.chunkPreviews.length > 0
+                ? diagnostics.chunkPreviews
+                : fallbackDiagnostics.chunkPreviews,
+          }
+        : {}),
+    },
+  };
+}
+
 function hydrateState(state: MockWorkbenchState): MockWorkbenchState {
   return {
     ...state,
     sources: state.sources.map((source) => {
-      if ("diagnostics" in source && source.diagnostics) {
-        return source;
-      }
-
       const chunks = state.sourceChunks.filter((chunk) => chunk.sourceId === source.id);
-
-      return {
-        ...source,
-        diagnostics: buildFallbackDiagnostics(source, chunks),
-      };
+      return normalizeSourceSummary(source, chunks);
     }),
     feedbackEntries: state.feedbackEntries.map((entry) => ({
       ...entry,
@@ -508,12 +547,7 @@ export function getChatSessionById(sessionId: string) {
   );
 }
 
-export function appendMessagesToSession(args: {
-  sessionId: string;
-  modelTier: ModelTier;
-  userMessage: ChatMessage;
-  assistantMessage: ChatMessage;
-}) {
+export function appendMessagesToSession(args: SessionAppendArgs) {
   const state = readState();
   state.sessions = state.sessions.map((session) => {
     if (session.id !== args.sessionId) {
@@ -538,10 +572,7 @@ export function appendMessagesToSession(args: {
   writeState(state);
 }
 
-export function addSourceDocument(args: {
-  source: SourceDocumentSummary;
-  chunks: SourceChunkRecord[];
-}) {
+export function addSourceDocument(args: SourceDocumentInsert) {
   const state = readState();
   const duplicateOf = state.sources.find(
     (existing) => normalizeDuplicateKey(existing) === normalizeDuplicateKey(args.source),

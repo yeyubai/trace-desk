@@ -103,7 +103,7 @@ export async function buildChatResponse(
     question: payload.message,
     recentMessages,
   });
-  const retrievedMatches = retrieveKnowledgeMatches({
+  const retrievedMatches = await retrieveKnowledgeMatches({
     knowledgeBaseId: payload.knowledgeBaseId,
     query: retrievalQuery,
   });

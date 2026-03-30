@@ -11,7 +11,7 @@
 - 前端数据层：`TanStack Query`
 - 表单与校验：`react-hook-form + zod`
 - AI：阿里云百炼；Node.js 侧优先通过兼容接口接入
-- RAG 编排：`LangChain.js`（当前已先接入 `Document + TextSplitter`）
+- RAG 编排：`LangChain.js + hybrid retrieval`（当前已接入 `Document + TextSplitter + embedding-ready chunking`）
 - 数据库：`PostgreSQL`
 - 向量检索：`pgvector`
 - 对象存储：阿里云 `OSS`
@@ -32,12 +32,14 @@
 ## 当前实现
 - 已完成 `Next.js App Router` 项目初始化，并直接在当前仓库根目录落项目结构。
 - 已搭好首版工作台页面骨架：知识库概览、来源导入、问答区、历史会话、运行时接入状态。
-- 已提供 mock 数据链路与 Route Handlers：`/api/workbench`、`/api/chat`、`/api/knowledge/*`、`/api/feedback`。
+- 已提供 live-first Route Handlers：`/api/workbench`、`/api/chat`、`/api/knowledge/*`、`/api/feedback`。
 - `TXT / Markdown / URL` 导入现已写入可检索正文分块；`PDF` 仍仅记录来源并标记为暂不可检索。
-- 已补真实服务接入口骨架：环境变量校验、`PostgreSQL/pgvector` 初始化 SQL、百炼兼容客户端、Redis 客户端、OSS 客户端。
+- 已补统一数据仓储层：应用默认走 `live`，真实读写直接落到 `PostgreSQL/pgvector`。
+- 已补真实服务接入口与向量字段：环境变量校验、`PostgreSQL/pgvector` 初始化 SQL、百炼兼容客户端、Redis 客户端、OSS 客户端。
 - 历史会话恢复、反馈持久化、继续追问建议已打通。
-- 导入后的来源详情已支持显示 `抽取策略 / 正文长度 / chunk 预览 / 诊断告警`，便于判断“为什么导入后可能问不到”。
-- 切块链路已开始切到 `LangChain.js`，当前优先落在 `Document + RecursiveCharacterTextSplitter / MarkdownTextSplitter`。
+- 导入后的来源详情已支持显示 `抽取策略 / 正文长度 / chunk 预览 / 诊断告警 / 检索门控`，便于判断“为什么导入后可能问不到”。
+- 切块链路已切到 `LangChain.js`，当前使用 `Document + RecursiveCharacterTextSplitter / MarkdownTextSplitter`，并在分块阶段生成 embedding。
+- 已补最小 RAG 评测脚本：`npm run eval:rag` 可回放黄金集，覆盖 `hit / miss / citation / blocked-source`。
 
 ## 当前 RAG 能力
 当前项目已经具备企业级 RAG 所需的基础分层，但仍处于持续收敛中：
@@ -52,15 +54,20 @@
 
 3. **Retrieval**
    - 仅 `retrievable` 来源进入检索
-   - `thin`、`body-fallback` 这类低质量来源会被降权
+   - `thin`、`body-fallback`、`pdf-unparsed` 这类低质量来源会在导入阶段被门控隔离
+   - 检索改为 `词法匹配 + embedding 相似度` 的混合打分
 
 4. **Answering**
    - 回答必须带引用
    - 证据不足时由服务端明确拒答，不依赖模型自由发挥
+   - 模型输出在回放给前端前会先经过一轮证据校验，未通过则自动回退为拒答
 
 5. **Observability**
    - 用户可以在来源详情看到导入诊断
-   - 当前已能解释“导入了为什么还问不到”的一部分原因
+   - 当前已能解释“导入了为什么还问不到”的主要原因，包括正文不足、抽取退化和检索门控
+
+6. **Evaluation**
+   - 提供固定 fixture + 黄金集脚本，可量化检查命中、拒答、引用和低质量来源隔离
 
 ## 最小验收路径
 推荐用下面这条链路验证当前系统是否真正可用：
@@ -87,11 +94,11 @@
 
 ## 环境变量说明
 - `APP_DATA_MODE`
-  - `mock`：当前默认模式，页面使用内存中的示例数据
-  - `live`：为接真实数据库保留的模式
+  - `live`：默认模式，页面与问答走真实数据库和 pgvector
+  - `mock`：仅保留给离线评测和兼容场景，不作为默认应用模式
 - `APP_AI_MODE`
-  - `mock`：当前默认模式，回答由本地 mock 编排生成
-  - `bailian`：接阿里云百炼兼容接口，需要配置 `BAILIAN_API_KEY`
+  - `bailian`：默认模式，接阿里云百炼兼容接口，需要配置 `BAILIAN_API_KEY`
+  - `mock`：仅建议用于本地极简兜底，不作为真实 RAG 默认模式
 - 其他真实服务配置：
   - `DATABASE_URL`
   - `REDIS_URL`
@@ -101,6 +108,7 @@
   - `OSS_ACCESS_KEY_SECRET`
   - `AI_FAST_MODEL`
   - `AI_QUALITY_MODEL`
+  - `AI_EMBEDDING_MODEL`
   - `BAILIAN_BASE_URL`
   - `BAILIAN_API_KEY`
 
@@ -113,3 +121,17 @@
 ## 说明
 - `readme.md` 用于记录项目介绍、技术路线和开发入口。
 - 变更历史以 Git 提交记录为准，不在 `readme.md` 或 `AGENTS.md` 中逐条维护流水账。
+
+## Live RAG 落地步骤
+1. 配置 `.env.local`
+   - `APP_DATA_MODE=live`
+   - `DATABASE_URL=...`
+   - 如需真实 embedding 与回答，再配置 `APP_AI_MODE=bailian`、`BAILIAN_API_KEY`、`AI_EMBEDDING_MODEL`
+2. 初始化数据库
+   - 运行 `npm run db:init`
+3. 启动项目
+   - 运行 `npm run dev`
+4. 真实链路说明
+   - 导入时会执行 `text -> chunk -> embedding -> source_chunk.embedding`
+   - 检索时会在 PostgreSQL 中使用 `pgvector` 做 top-k 向量召回，再与词法候选合并重排
+   - 低质量来源会在导入阶段被检索门控隔离，不进入问答召回

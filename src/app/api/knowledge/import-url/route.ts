@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { importUrlSchema } from "@/features/knowledge/schemas/import-source";
 import { createImportedUrlSource } from "@/features/knowledge/server/import-knowledge-source";
-import { addSourceDocument } from "@/services/db/mock-workbench-store";
+import { addSourceDocument } from "@/services/db/workbench-store";
 import { getWorkbenchSnapshot } from "@/features/workbench/server/getWorkbenchSnapshot";
 
 export async function POST(request: Request) {
@@ -10,9 +10,9 @@ export async function POST(request: Request) {
     const payload = importUrlSchema.parse(await request.json());
     const importedSource = await createImportedUrlSource(payload);
 
-    addSourceDocument(importedSource);
+    await addSourceDocument(importedSource);
 
-    return NextResponse.json(getWorkbenchSnapshot());
+    return NextResponse.json(await getWorkbenchSnapshot());
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(

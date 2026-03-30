@@ -6,14 +6,14 @@ import {
   listResponseFeedback,
   listChatSessions,
   listSourceDocumentsByKnowledgeBaseId,
-} from "@/services/db/mock-workbench-store";
+} from "@/services/db/workbench-store";
 import type { WorkbenchSnapshot } from "@/features/workbench/types/workbench";
 
-export function getWorkbenchSnapshot(): WorkbenchSnapshot {
-  const knowledgeBase = getKnowledgeBaseOverview();
-  const sessions = listChatSessions();
-  const sources = listSourceDocumentsByKnowledgeBaseId(knowledgeBase.id);
-  const feedbackEntries = listResponseFeedback();
+export async function getWorkbenchSnapshot(): Promise<WorkbenchSnapshot> {
+  const knowledgeBase = await getKnowledgeBaseOverview();
+  const sessions = await listChatSessions(knowledgeBase.id);
+  const sources = await listSourceDocumentsByKnowledgeBaseId(knowledgeBase.id);
+  const feedbackEntries = await listResponseFeedback();
   const feedbackByMessage = Object.fromEntries(
     feedbackEntries.map((entry) => [
       entry.messageId,

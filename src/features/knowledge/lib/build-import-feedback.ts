@@ -40,7 +40,10 @@ export function buildImportFeedback(
   if (source.status === "indexing" || source.retrievalStatus === "unavailable") {
     return {
       tone: "warning",
-      title: "来源已导入，正在处理中",
+      title:
+        source.diagnostics.retrievalGate === "blocked"
+          ? "来源已导入，但已被检索质量门控隔离"
+          : "来源已导入，正在处理中",
       description: source.retrievalDetail,
     };
   }

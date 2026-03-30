@@ -1,9 +1,9 @@
 import type { CitationItem } from "@/features/chat/types/chat";
+import { listSourceDocumentsByKnowledgeBaseId } from "@/services/db/workbench-store";
 import type {
   RetrievalDiagnostics,
   SearchKnowledgeMatch,
 } from "@/services/retrieval/search-knowledge-base";
-import { listSourceDocumentsByKnowledgeBaseId } from "@/services/db/mock-workbench-store";
 
 export function buildRefusalAnswer(diagnostics?: RetrievalDiagnostics) {
   const hints = diagnostics?.notes ?? [];
@@ -12,21 +12,19 @@ export function buildRefusalAnswer(diagnostics?: RetrievalDiagnostics) {
     answerMarkdown: [
       "我没有在当前知识库里检索到足够可靠的依据，暂时不能直接回答这个问题。",
       "",
-      ...(hints.length > 0
-        ? ["当前诊断：", ...hints.map((hint) => `- ${hint}`), ""]
-        : []),
+      ...(hints.length > 0 ? ["当前诊断：", ...hints.map((hint) => `- ${hint}`), ""] : []),
       "你可以换一个更贴近已导入内容的问法，或者先补充相关文档后再试。",
     ].join("\n"),
     citations: [] as CitationItem[],
-    followups: ["换一个更具体的问法", "先补充相关文档再继续提问"],
+    followups: ["换一个更具体的问题", "先补充相关文档再继续提问"],
   };
 }
 
-export function buildCitationsFromMatches(args: {
+export async function buildCitationsFromMatches(args: {
   knowledgeBaseId: string;
   matches: SearchKnowledgeMatch[];
 }) {
-  const sources = listSourceDocumentsByKnowledgeBaseId(args.knowledgeBaseId);
+  const sources = await listSourceDocumentsByKnowledgeBaseId(args.knowledgeBaseId);
 
   return args.matches
     .map((match) => {
@@ -47,7 +45,7 @@ export function buildCitationsFromMatches(args: {
     .filter((citation): citation is CitationItem => citation !== null);
 }
 
-export function composeMockAnswer(args: {
+export async function composeMockAnswer(args: {
   knowledgeBaseId: string;
   matches: SearchKnowledgeMatch[];
   diagnostics?: RetrievalDiagnostics;
@@ -56,7 +54,7 @@ export function composeMockAnswer(args: {
     return buildRefusalAnswer(args.diagnostics);
   }
 
-  const citations = buildCitationsFromMatches({
+  const citations = await buildCitationsFromMatches({
     knowledgeBaseId: args.knowledgeBaseId,
     matches: args.matches,
   });
@@ -65,24 +63,23 @@ export function composeMockAnswer(args: {
     return buildRefusalAnswer(args.diagnostics);
   }
 
-  const evidenceLines = citations.map(
-    (citation) =>
-      `- **${citation.sourceTitle} ${citation.citationLabel}**：${citation.excerpt}`,
-  );
+  const evidenceLines = args.matches.slice(0, 3).map((match, index) => {
+    const citation = citations[index];
+    const evidenceText = match.content.split(/(?<=[。！？.!?])/).find((line) => line.trim().length > 0)
+      ?? match.excerpt;
+
+    return `- ${evidenceText.trim()}${citation ? `（${citation.citationLabel} ${citation.sourceTitle}）` : ""}`;
+  });
 
   return {
     answerMarkdown: [
-      "我在当前知识库里找到了可直接引用的依据，首版可以先按下面的顺序推进：",
+      "根据当前可用证据，可以确认这些要点：",
       "",
       ...evidenceLines,
       "",
-      "落地时优先保证：",
-      "",
-      "1. 回答始终附带来源。",
-      "2. 检索未命中时明确拒答。",
-      "3. 消息统一按 `parts` 结构组织，为流式状态和工具状态预留空间。",
+      "如果你希望，我可以继续把这些证据整理成实施步骤、接口清单或页面方案。",
     ].join("\n"),
     citations,
-    followups: ["把这些要求拆成页面模块", "继续补接口和 mock 数据结构"],
+    followups: ["把这些证据整理成实施步骤", "继续拆接口和数据结构"],
   };
 }

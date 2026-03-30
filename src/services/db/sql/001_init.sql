@@ -15,11 +15,15 @@ CREATE TABLE IF NOT EXISTS source_document (
   title TEXT NOT NULL,
   kind TEXT NOT NULL CHECK (kind IN ('pdf', 'markdown', 'txt', 'url')),
   status TEXT NOT NULL CHECK (status IN ('available', 'indexing', 'failed')),
+  retrieval_status TEXT NOT NULL CHECK (retrieval_status IN ('retrievable', 'stored_only', 'unavailable')) DEFAULT 'unavailable',
+  retrieval_detail TEXT NOT NULL DEFAULT '',
   summary TEXT NOT NULL DEFAULT '',
   source_url TEXT,
   object_key TEXT,
   chunk_count INTEGER NOT NULL DEFAULT 0,
   citation_label TEXT NOT NULL,
+  diagnostics JSONB NOT NULL DEFAULT '{}'::jsonb,
+  duplicate_of_source_id UUID REFERENCES source_document(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -31,12 +35,20 @@ CREATE TABLE IF NOT EXISTS source_chunk (
   chunk_index INTEGER NOT NULL,
   content TEXT NOT NULL,
   excerpt TEXT NOT NULL,
+  keywords TEXT[] NOT NULL DEFAULT '{}',
   embedding VECTOR(1536),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_source_chunk_knowledge_base_id
   ON source_chunk (knowledge_base_id);
+
+CREATE INDEX IF NOT EXISTS idx_source_chunk_embedding_cosine
+  ON source_chunk USING ivfflat (embedding vector_cosine_ops)
+  WITH (lists = 100);
+
+CREATE INDEX IF NOT EXISTS idx_source_chunk_keywords_gin
+  ON source_chunk USING GIN (keywords);
 
 CREATE TABLE IF NOT EXISTS chat_session (
   id UUID PRIMARY KEY,

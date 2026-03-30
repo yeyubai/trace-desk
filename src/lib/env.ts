@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  APP_DATA_MODE: z.enum(["mock", "live"]).default("mock"),
-  APP_AI_MODE: z.enum(["mock", "bailian"]).default("mock"),
+  APP_DATA_MODE: z.enum(["mock", "live"]).default("live"),
+  APP_AI_MODE: z.enum(["mock", "bailian"]).default("bailian"),
   AI_FAST_MODEL: z.string().trim().min(1).default("qwen-turbo"),
   AI_QUALITY_MODEL: z.string().trim().min(1).default("qwen-plus"),
+  AI_EMBEDDING_MODEL: z.string().trim().min(1).default("text-embedding-v4"),
   BAILIAN_API_KEY: z.string().trim().optional(),
   BAILIAN_BASE_URL: z
     .string()
@@ -33,6 +34,7 @@ export function getEnv() {
     APP_AI_MODE: process.env.APP_AI_MODE,
     AI_FAST_MODEL: process.env.AI_FAST_MODEL,
     AI_QUALITY_MODEL: process.env.AI_QUALITY_MODEL,
+    AI_EMBEDDING_MODEL: process.env.AI_EMBEDDING_MODEL,
     BAILIAN_API_KEY: process.env.BAILIAN_API_KEY,
     BAILIAN_BASE_URL: process.env.BAILIAN_BASE_URL,
     DATABASE_URL: process.env.DATABASE_URL,

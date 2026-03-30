@@ -1,6 +1,14 @@
 # Team Knowledge Q&A Workbench
 
 ## Summary
+## RAG Update (2026-03-29)
+- 数据层已从 mock 兼容态收敛到 live-first；应用默认走真实 `PostgreSQL/pgvector`。
+- 导入链路会在 chunking 后生成 embedding，并对 `thin / body-fallback / pdf-unparsed / empty` 等低质量来源做检索门控。
+- 检索链路已升级为 `词法匹配 + embedding 相似度` 的混合打分，不再只依赖关键词 `includes` 命中。
+- 多轮 retrieval query 已改为只利用最近用户问题做 follow-up 扩写，避免 assistant 文本噪声直接污染检索串。
+- 回答链路已改为“先生成、再做证据校验、最后再流式回放”；若模型输出未通过证据校验，服务端会自动回退为拒答。
+- 已补最小 RAG 评测闭环：`npm run eval:rag` 使用固定 fixture + 黄金集，覆盖 `hit / miss / citation / blocked-source`。
+
 设计一个面向企业团队成员的“知识助手工作台”，让用户上传文档、抓取网页、建立知识库，并通过 AI 问答助手进行多轮问答、引用追溯、总结提炼和行动建议生成。  
 这个题目适合用 `Next.js + shadcn/ui + 阿里百炼 SDK/兼容接口`，因为它能系统覆盖你要练的 AI 落地能力：`streaming`、Markdown 实时渲染、多模态展示、RAG、工具调用、结构化输出、性能优化、接口协作、评测与观测。
 
@@ -164,3 +172,9 @@
 - 当前技术路线优先贴近国内常见组合：`Next.js + PostgreSQL/pgvector + OSS + Redis + 阿里百炼`
 - 首版以后端简单可控为目标，不引入 `Supabase` 这类一体化海外 BaaS
 - UI 风格以“企业知识工具”方向为主，强调专业、清晰、可信，而不是炫技
+
+## Live RAG Update (2026-03-29)
+- 应用默认已切到 live-first，真实 `PostgreSQL/pgvector` 数据落库不再只是可选分支。
+- 导入链路已接上 `chunk -> embedding -> source_chunk.embedding`。
+- 检索链路已支持数据库内 `pgvector` top-k 召回，并与词法候选合并做混合重排。
+- 项目新增 `npm run db:init` 用于初始化 live 数据库 schema 与向量索引。

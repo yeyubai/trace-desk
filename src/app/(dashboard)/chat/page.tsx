@@ -10,7 +10,7 @@ type ChatPageProps = {
 };
 
 export default async function ChatPage({ searchParams }: ChatPageProps) {
-  const snapshot = getWorkbenchSnapshot();
+  const snapshot = await getWorkbenchSnapshot();
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const initialSessionId = Array.isArray(resolvedSearchParams?.sessionId)
     ? resolvedSearchParams.sessionId[0]

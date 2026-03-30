@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listSourceDocumentsByKnowledgeBaseId } from "@/services/db/mock-workbench-store";
+import { listSourceDocumentsByKnowledgeBaseId } from "@/services/db/workbench-store";
 
 export async function GET(
   _request: Request,
@@ -7,5 +7,5 @@ export async function GET(
 ) {
   const { id } = await context.params;
 
-  return NextResponse.json(listSourceDocumentsByKnowledgeBaseId(id));
+  return NextResponse.json(await listSourceDocumentsByKnowledgeBaseId(id));
 }
