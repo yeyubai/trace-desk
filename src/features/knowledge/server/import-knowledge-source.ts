@@ -114,6 +114,92 @@ function extractHtmlBlocks(value: string, pattern: RegExp) {
   return [...value.matchAll(pattern)].map((match) => match[1] ?? "");
 }
 
+function extractMetaContent(value: string, name: string) {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    `<meta[^>]+(?:name|property)=["']${escapedName}["'][^>]+content=["']([\\s\\S]*?)["'][^>]*>`,
+    "i",
+  );
+  const match = value.match(pattern);
+
+  return match ? normalizeText(decodeHtmlEntities(match[1])) : "";
+}
+
+function stripKnownBoilerplateLines(value: string) {
+  const blockedPatterns = [
+    /^腾讯云$/i,
+    /^开发者社区$/i,
+    /^文档 建议反馈 控制台$/i,
+    /^登录\/注册$/i,
+    /^首页$/i,
+    /^学习$/i,
+    /^活动$/i,
+    /^专区$/i,
+    /^圈层$/i,
+    /^工具$/i,
+    /^MCP广场$/i,
+    /^文章\/答案\/技术大牛 搜索$/i,
+    /^搜索 关闭$/i,
+    /^发布$/i,
+    /^相关文章$/i,
+    /^相似问题$/i,
+    /^社区$/i,
+    /^关于$/i,
+    /^热门产品$/i,
+    /^Copyright ©/i,
+  ];
+
+  return normalizeText(
+    value
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => {
+        if (!line) {
+          return false;
+        }
+
+        return !blockedPatterns.some((pattern) => pattern.test(line));
+      })
+      .join("\n"),
+  );
+}
+
+function extractTencentCloudAskDocument(html: string) {
+  const answerMatches = [
+    ...html.matchAll(
+      /<div class="rno-markdown cdc-answer__content[\s\S]*?">([\s\S]*?)<\/div><\/div><div class="cdc-answer__operation"/gi,
+    ),
+  ];
+  const answers = answerMatches
+    .map((match) => htmlToText(match[1] ?? ""))
+    .map((text) => stripKnownBoilerplateLines(text))
+    .filter((text) => text.length > 40);
+  const questionSummary = extractMetaContent(html, "description");
+  const originalUrlMatch = html.match(
+    /<div class="mod-source-text"><div>原文链接：<\/div><p>(https:\/\/stackoverflow\.com\/questions\/[^<]+)<\/p>/i,
+  );
+  const originalUrl = originalUrlMatch?.[1] ?? "";
+
+  if (answers.length === 0) {
+    return null;
+  }
+
+  const sections = [
+    questionSummary ? `问题摘要\n${questionSummary}` : "",
+    ...answers.map((answer, index) => `回答 ${index + 1}\n${answer}`),
+    originalUrl ? `原始来源\n${originalUrl}` : "",
+  ].filter(Boolean);
+  const warnings = originalUrl
+    ? ["已优先抽取问答正文，原始来源为 Stack Overflow 镜像页。"]
+    : ["已优先抽取问答正文，已过滤大部分导航与页脚噪声。"];
+
+  return {
+    text: normalizeText(sections.join("\n\n")),
+    extractionMode: "qa-answers",
+    warnings,
+  };
+}
+
 function getContentQuality(args: { extractedTextLength: number; chunkCount: number }): SourceContentQuality {
   if (args.extractedTextLength <= 0 || args.chunkCount === 0) {
     return "empty";
@@ -331,7 +417,22 @@ async function fetchUrlDocument(url: string) {
   }
 
   const html = await response.text();
+  const parsedUrl = new URL(url);
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const structuredDocument =
+    parsedUrl.hostname === "cloud.tencent.com" && parsedUrl.pathname.startsWith("/developer/ask/")
+      ? extractTencentCloudAskDocument(html)
+      : null;
+
+  if (structuredDocument) {
+    return {
+      title: titleMatch ? normalizeText(decodeHtmlEntities(titleMatch[1])) : "",
+      text: structuredDocument.text,
+      extractionMode: structuredDocument.extractionMode,
+      warnings: structuredDocument.warnings,
+    };
+  }
+
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   const bodyHtml = bodyMatch?.[1] ?? html;
   const articleCandidates = extractHtmlBlocks(
