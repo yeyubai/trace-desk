@@ -2,63 +2,70 @@
 
 ## What This Is
 
-`trace-desk` 是一个面向企业团队成员的 AI 知识工作台。它围绕“导入文档与网页、建立可检索知识库、基于引用生成回答”这条主链路，练习前端主导的 AI 应用工程化能力，并沉淀为可演示的作品集项目。
+`trace-desk` 是一个面向企业团队成员的 AI 知识工作台。它围绕“导入文档与网页、建立可检索知识库、基于引用生成回答、把问答沉淀为团队资产”这条主链路，练习前端主导的 AI 应用工程化能力，并沉淀为可持续演进的作品集项目。
 
 ## Core Value
 
-团队成员能基于可信引用，快速从文档和网页中得到可追溯的答案，而不是只看到一个“像是正确”的聊天回复。
+团队成员能够基于可追溯引用，快速从文档和网页中得到可信答案；并且当系统答不上来时，失败不会被浪费，而是能转化为知识治理和业务改进动作。
+
+## Current Milestone: v1.1 RAG 业务闭环优化
+
+**Goal:** 把当前“可信 RAG 底座”推进成“业务价值更清晰、失败可转化、知识可治理、回答可复用”的团队知识工作流。
+
+**Target features:**
+- 聚焦一个高价值业务场景，重写产品价值叙事、入口和验收方式
+- 为来源与引用补齐治理语义，例如负责人、时效性、可信级别与冲突提示
+- 为未命中和低置信回答补齐转化闭环，沉淀为待补知识或审核任务
+- 让回答产物能被团队复用，并开始观察业务采纳与缺口趋势
 
 ## Requirements
 
 ### Validated
 
-- ✓ 已具备 `Next.js App Router + React + TypeScript + shadcn/ui + Tailwind CSS` 的工作台骨架与页面壳子 — existing
-- ✓ 已提供 `workbench / chat / knowledge / feedback` 的 Route Handlers 与 mock 数据链路 — existing
-- ✓ 已支持 `TXT / Markdown / URL` 导入为可检索正文分块，`PDF` 会明确标记为暂不可检索 — existing
-- ✓ 已补齐 `PostgreSQL / pgvector / Redis / OSS / 阿里云百炼兼容接口` 的接入口骨架 — existing
+- 已具备 `Next.js App Router + React + TypeScript + shadcn/ui + Tailwind CSS` 的工作台骨架与页面壳
+- 已提供 `workbench / chat / knowledge / feedback` 的 Route Handlers 与真实 RAG 接口入口
+- 已支持 `TXT / Markdown / URL` 导入为可检索正文分块，`PDF` 会明确标记为已存储但未必可检索
+- 已建立 `导入 -> 检索 -> grounded answer -> 引用展示 -> 会话反馈` 的基础可信链路
+- 已完成 Phase 6：默认业务场景、入口文案、任务路径与业务指标契约已经对齐
 
 ### Active
 
-- [ ] 进入 milestone 收尾与归档，准备下一轮真实服务化推进
+- [ ] 建立知识治理模型，让来源“能引用”进一步升级为“可管理、可审查、可更新”
+- [ ] 打通未命中、低置信和反馈回流路径，把失败问答转化为后续知识建设任务
+- [ ] 让回答产物能被团队复用，并开始观察业务采纳与缺口趋势
 
 ### Out of Scope
 
-- 复杂多租户、组织级权限与审批流 — 首版目标是单租户团队知识工作台
-- 企业 IM / CRM / 工单系统集成 — 不属于当前 MVP 的核心价值
-- 自动模型路由、复杂成本控制策略 — 先保留 `Fast / Quality` 两档即可
-- 全量 PDF 深度解析与 OCR 流程 — 当前阶段只要求“可见且明确告知不可检索”
+- 多租户组织权限与审批流
+- CRM / IM / 工单系统等外部企业集成
+- 全量 OCR 与重型 PDF 深度解析平台
+- 自动模型路由与复杂成本控制
+- 与当前业务闭环目标无直接关系的平台化能力堆叠
 
 ## Context
 
-- 当前仓库已存在可运行代码和较完整的产品规划，因此这是一个 `brownfield` 的 GSD 接入，而不是从零初始化。
-- 项目内已有明确技术路线与规则来源：`readme.md`、`plan.md`、`.codex/rules/`、`AGENTS.md`。
-- 当前工作树存在未提交改动，说明后续 phase 执行需要严格收敛边界，避免把 GSD 规划动作和正在进行的功能开发混在一起。
-- 仓库强调聊天消息按 `parts` 建模、回答必须带引用、未命中必须拒答，这些是后续所有 phase 的硬约束。
+- 当前仓库已经完成 `v1.0 MVP`，并在 `.planning/milestones/` 中保留了已归档的路线与需求。
+- 用户最新反馈指出，系统的主要短板不在“是否能做 RAG”，而在“是否有清晰的业务抓手与持续使用理由”。
+- `.planning/todos/pending/2026-03-26-rag-unified-design-and-import-audit.md` 与 `.planning/todos/pending/2026-03-31-rag-business-loop-and-governance.md` 共同作为本里程碑输入。
+- `Phase 6` 已完成，当前产品默认以“团队知识答疑与标准回复生成”作为统一业务场景。
 
 ## Constraints
 
-- **Tech stack**: `Next.js App Router + React + TypeScript + shadcn/ui + Tailwind CSS + TanStack Query + react-hook-form + zod + PostgreSQL + pgvector + OSS + Redis + 阿里云百炼` — 与项目既定路线保持一致
-- **Architecture**: 默认使用 `Next.js Route Handlers` 提供接口 — 当前阶段不引入独立后端
-- **Product scope**: 首版聚焦 `文档导入 + RAG 问答 + 引用展示 + 历史会话` — 避免过早平台化
-- **Trustworthiness**: 未命中知识库必须明确拒答，不允许伪造引用 — 这是产品可信度底线
-- **Git workflow**: 仓库提交信息必须使用中文 `类型：简要说明` — 不能直接照搬 GSD 默认英文提交格式
+- **Tech stack**: 继续使用既定技术栈，避免为业务问题引入新的基础设施复杂度。
+- **Architecture**: 默认仍由 `Next.js Route Handlers` 提供接口，不拆独立后端。
+- **Product scope**: 本轮优先补“场景、治理、闭环、复用、指标”，不是继续横向铺更多来源或平台功能。
+- **Trustworthiness**: 未命中时必须明确拒答，不允许伪造引用；新增业务闭环能力不能破坏现有可信约束。
+- **Git workflow**: 仓库提交信息继续使用中文 `类型：简要说明` 格式。
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 保持 `Next.js Route Handlers` 为默认服务端边界 | 当前规模以端到端可控和开发效率优先 | ✓ Good |
-| 以 `.planning/` 承接 GSD 规划状态，但默认本地维护 | GSD 默认英文提交格式与仓库 Git 规范冲突 | ✓ Good |
-| 本轮 milestone 聚焦 MVP 可演示链路，而非权限和平台能力 | 更符合作品集项目与当前计划节奏 | ✓ Good |
-| 先把引用可信度和状态建模做扎实，再扩展工具调用与评测能力 | 可信回答比“功能堆满”更重要 | — Pending |
-| 导入状态与检索状态拆成双维模型 | 避免把“已保存但不可检索”的来源误报为失败 | ✓ Good |
-| 重复导入 Phase 2 先提示不合并 | 在 mock 阶段优先保证透明反馈而不是复杂覆盖逻辑 | ✓ Good |
-| 聊天链路先稳定 NDJSON 流式协议和最近上下文，再继续深化 grounded answer | 先把消息契约和会话 continuity 打稳，后续增强才不会返工 | ✓ Good |
-| grounded answer 先由服务端做证据门控 | 没有可用 citation 时直接拒答，比依赖模型自觉更稳 | ✓ Good |
-| 模型档位感知与聊天状态展示放在交互层闭环 | 不扩展协议也能让用户理解当前档位与回答状态 | ✓ Good |
-| 会话与反馈 mock 数据改为文件持久化 | 只有跨请求共享状态，历史会话和反馈闭环才算真实可测 | ✓ Good |
-| 导入来源必须暴露抽取 diagnostics | 企业级 RAG 需要解释“为什么导入后问不到”，不能只给成功提示 | ✓ Good |
-| LangChain.js 从 chunking 层开始逐步接入 | 先替换最核心的文档切块环节，再扩展到更完整生态 | ✓ Good |
+| `v1.1` 先做业务闭环优化，而不是平台扩张 | 当前最大短板是价值叙事和团队复用，而不是功能数量 | Good |
+| 延续 phase 编号，从 Phase 6 开始 | 保持里程碑历史连续，便于追踪 v1.0 到 v1.1 的演进 | Good |
+| 先聚焦一个默认业务场景，再讨论多场景扩展 | 不聚焦场景会让需求、指标和 UI 都继续发散 | Good |
+| 治理、未命中转化和回答复用应与 RAG 统一设计待办并行推进 | 可信回答和业务闭环不能分裂成两套产品心智 | Pending |
+| 概览、导入、问答、会话与文档必须使用同一套业务语言 | 客户只会信任一条清晰一致的工作流 | Good |
 
 ## Evolution
 
@@ -78,4 +85,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after Phase 5 complete*
+*Last updated: 2026-04-01 after completing Phase 6*

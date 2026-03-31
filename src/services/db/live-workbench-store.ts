@@ -1,5 +1,9 @@
 import "server-only";
 import type { ChatMessage, ChatMessagePart, ChatSession } from "@/features/chat/types/chat";
+import {
+  normalizeSourceIdentity,
+  resolveCanonicalSourceId,
+} from "@/features/knowledge/lib/source-identity";
 import type {
   KnowledgeBaseOverview,
   SourceDocumentSummary,
@@ -532,8 +536,31 @@ export async function appendMessagesToSession(args: SessionAppendArgs) {
 
 export async function addSourceDocument(args: SourceDocumentInsert) {
   const pool = getPostgresPool();
+  const duplicateCandidates = await listSourceDocumentsByKnowledgeBaseId(
+    args.source.knowledgeBaseId,
+  );
+  const duplicateIdentity = normalizeSourceIdentity(args.source);
+  const duplicateOf = duplicateCandidates.find((existing) => {
+    if (existing.id === args.source.id) {
+      return false;
+    }
 
-  await ensureKnowledgeBase(args.source.knowledgeBaseId);
+    return normalizeSourceIdentity(existing) === duplicateIdentity;
+  });
+  const sourceWithDuplicateHint: SourceDocumentSummary = duplicateOf
+    ? {
+        ...args.source,
+        duplicateOf: {
+          sourceId: resolveCanonicalSourceId(duplicateOf),
+          title: duplicateOf.title,
+        },
+      }
+    : {
+        ...args.source,
+        duplicateOf: args.source.duplicateOf ?? null,
+      };
+
+  await ensureKnowledgeBase(sourceWithDuplicateHint.knowledgeBaseId);
   await pool.query(
     `
       INSERT INTO source_document (
@@ -570,24 +597,26 @@ export async function addSourceDocument(args: SourceDocumentInsert) {
         updated_at = EXCLUDED.updated_at
     `,
     [
-      args.source.id,
-      args.source.knowledgeBaseId,
-      args.source.title,
-      args.source.kind,
-      args.source.status,
-      args.source.retrievalStatus,
-      args.source.retrievalDetail,
-      args.source.summary,
-      args.source.url ?? null,
-      args.source.chunkCount,
-      args.source.citationLabel,
-      JSON.stringify(args.source.diagnostics),
-      args.source.duplicateOf?.sourceId ?? null,
-      args.source.updatedAt,
+      sourceWithDuplicateHint.id,
+      sourceWithDuplicateHint.knowledgeBaseId,
+      sourceWithDuplicateHint.title,
+      sourceWithDuplicateHint.kind,
+      sourceWithDuplicateHint.status,
+      sourceWithDuplicateHint.retrievalStatus,
+      sourceWithDuplicateHint.retrievalDetail,
+      sourceWithDuplicateHint.summary,
+      sourceWithDuplicateHint.url ?? null,
+      sourceWithDuplicateHint.chunkCount,
+      sourceWithDuplicateHint.citationLabel,
+      JSON.stringify(sourceWithDuplicateHint.diagnostics),
+      sourceWithDuplicateHint.duplicateOf?.sourceId ?? null,
+      sourceWithDuplicateHint.updatedAt,
     ],
   );
 
-  await pool.query(`DELETE FROM source_chunk WHERE source_document_id = $1`, [args.source.id]);
+  await pool.query(`DELETE FROM source_chunk WHERE source_document_id = $1`, [
+    sourceWithDuplicateHint.id,
+  ]);
 
   if (args.chunks.length > 0) {
     const values = args.chunks
@@ -599,7 +628,7 @@ export async function addSourceDocument(args: SourceDocumentInsert) {
     const params = args.chunks.flatMap((chunk, index) => [
       chunk.id,
       chunk.knowledgeBaseId,
-      chunk.sourceId,
+      sourceWithDuplicateHint.id,
       index,
       chunk.content,
       chunk.excerpt,
@@ -631,7 +660,7 @@ export async function addSourceDocument(args: SourceDocumentInsert) {
       SET updated_at = NOW()
       WHERE id = $1
     `,
-    [args.source.knowledgeBaseId],
+    [sourceWithDuplicateHint.knowledgeBaseId],
   );
 }
 

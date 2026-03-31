@@ -1,46 +1,44 @@
 # Requirements: trace-desk
 
-**Defined:** 2026-03-25
-**Core Value:** 团队成员能基于可信引用，快速从文档和网页中得到可追溯的答案，而不是只看到一个“像是正确”的聊天回复。
+**Defined:** 2026-03-31
+**Milestone:** v1.1 RAG 业务闭环优化
+**Core Value:** 团队成员不仅能获得可追溯答案，还能把未命中、反馈和优质回答转化为持续改进的团队知识资产。
 
-## v1 Requirements
+## Existing Baseline
 
-### Foundation
+- [x] 用户可以导入 `TXT / Markdown / URL` 来源并查看是否可检索
+- [x] 用户可以在聊天区得到带引用的 grounded answer，未命中时明确拒答
+- [x] 用户可以恢复历史会话并提交反馈
+- [x] 工作台已经具备基础的导入诊断、引用展示与会话闭环
 
-- [x] **FOUND-01**: User can open overview, import, chat, and sessions pages under one consistent workspace shell.
-- [x] **FOUND-02**: Workspace clearly shows current `data mode`、`AI mode` and runtime readiness without requiring code inspection.
-- [x] **FOUND-03**: Mock and live adapters share one stable UI contract so the frontend does not branch on backend mode.
+## v1.1 Requirements
 
-### Knowledge Ingestion
+### Business Focus
 
-- [x] **INGEST-01**: User can import `TXT / Markdown / URL` sources and see whether each source is retrievable.
-- [x] **INGEST-02**: User can upload `PDF` sources and explicitly see they are stored but not yet retrievable.
-- [x] **INGEST-03**: User can inspect source list and source detail to understand parse status, retrievable state, and latest update.
-- [x] **INGEST-04**: Import failures return actionable UI/API feedback instead of silent failure.
+- [x] **BIZ-01**: User can enter the workspace through one clearly framed business scenario instead of a generic “knowledge Q&A” shell.
+- [x] **BIZ-02**: User can understand what the current scenario is optimizing, which sources matter most, and what a successful answer looks like.
 
-### Grounded Chat
+### Governance
 
-- [x] **CHAT-01**: User can ask multi-turn questions against the knowledge base from the chat workspace.
-- [x] **CHAT-02**: Assistant responses preserve `parts`-friendly message structure and session history.
-- [x] **CHAT-03**: When retrieval hits, answers show citations tied to source records.
-- [x] **CHAT-04**: When retrieval misses, assistant explicitly states no reliable evidence was found and does not fabricate citations.
-- [x] **CHAT-05**: User can choose between `Fast` and `Quality` model tiers and see which tier answered.
+- [ ] **GOV-01**: User can see source ownership, freshness, and trust level in source detail and citation-related views.
+- [ ] **GOV-02**: User can tell when a source is stale, weak, or conflicting before treating it as strong evidence.
 
-### Sessions & Feedback
+### Miss Loop & Feedback
 
-- [x] **SESS-01**: User can reopen a past session and recover the message history needed to continue the conversation.
-- [x] **SESS-02**: User can submit answer feedback and the system persists the feedback state.
-- [x] **SESS-03**: Workspace can surface grounded next-step suggestions or follow-up prompts without inventing new evidence.
+- [ ] **LOOP-01**: User can turn a retrieval miss or refusal into a structured knowledge gap record instead of losing the question.
+- [ ] **LOOP-02**: User can route misses and answer feedback into a visible review or source-update queue.
 
-### Reliability & Portfolio
+### Actionability & Collaboration
 
-- [ ] **REL-01**: Import, chat, and sessions flows all have explicit loading, empty, and failure states.
-- [x] **REL-02**: Core milestone flows pass `npm run lint`, `npm run typecheck`, and `npm run build`.
-- [x] **REL-03**: Project includes demo-friendly docs, seeded scenarios, and portfolio-ready presentation material.
+- [ ] **ACT-01**: User can convert a grounded answer into reusable outputs such as summary, action items, or standard reply drafts.
+- [ ] **COL-01**: User can promote a grounded answer into a reusable team artifact instead of leaving value trapped in a single session.
 
-## v2 Requirements
+### Metrics & Coverage
 
-### Platform Expansion
+- [x] **MET-01**: User can see business-facing metrics such as answer adoption, accepted answers, and recurring knowledge gaps in addition to RAG quality signals.
+- [ ] **COV-01**: Product explicitly defines which enterprise source types are first-class retrievable content in this milestone, including the business boundary for `PDF`.
+
+## Future Requirements
 
 - **PLAT-01**: User can authenticate with a lightweight self-hosted auth flow.
 - **PLAT-02**: Large import jobs run through queue-backed async processing.
@@ -51,39 +49,31 @@
 
 | Feature | Reason |
 |---------|--------|
-| Multi-tenant org permissions | Increases backend complexity and is not core to the MVP knowledge workflow |
-| CRM / IM / ticketing integrations | Useful later, but not required to validate grounded Q&A |
-| Full OCR + deeply searchable PDF pipeline | Too much document-processing scope for the current milestone |
-| Automatic model routing | Two explicit model tiers are enough for v1 |
+| Multi-tenant org permissions | Still not required to validate the business-loop milestone |
+| CRM / IM / ticketing integrations | Valuable later, but not needed to prove the new workflow |
+| Full OCR + deeply searchable PDF pipeline | Too large for this milestone; boundary definition comes first |
+| Automatic model routing | Explicit model tiers remain sufficient for now |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Complete |
-| FOUND-02 | Phase 1 | Complete |
-| FOUND-03 | Phase 1 | Complete |
-| INGEST-01 | Phase 2 | Complete |
-| INGEST-02 | Phase 2 | Complete |
-| INGEST-03 | Phase 2 | Complete |
-| INGEST-04 | Phase 2 | Complete |
-| CHAT-01 | Phase 3 | Complete |
-| CHAT-02 | Phase 3 | Complete |
-| CHAT-03 | Phase 3 | Complete |
-| CHAT-04 | Phase 3 | Complete |
-| CHAT-05 | Phase 3 | Complete |
-| SESS-01 | Phase 4 | Complete |
-| SESS-02 | Phase 4 | Complete |
-| SESS-03 | Phase 4 | Complete |
-| REL-01 | Phase 5 | Pending |
-| REL-02 | Phase 5 | Complete |
-| REL-03 | Phase 5 | Complete |
+| BIZ-01 | Phase 6 | Complete |
+| BIZ-02 | Phase 6 | Complete |
+| MET-01 | Phase 6 | Complete |
+| GOV-01 | Phase 7 | Planned |
+| GOV-02 | Phase 7 | Planned |
+| LOOP-01 | Phase 7 | Planned |
+| LOOP-02 | Phase 7 | Planned |
+| COV-01 | Phase 7 | Planned |
+| ACT-01 | Phase 8 | Planned |
+| COL-01 | Phase 8 | Planned |
 
 **Coverage:**
-- v1 requirements: 18 total
-- Mapped to phases: 18
+- v1.1 requirements: 10 total
+- Mapped to phases: 10
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 after brownfield GSD initialization*
+*Requirements defined: 2026-03-31*
+*Last updated: 2026-04-01 after Phase 6 complete*

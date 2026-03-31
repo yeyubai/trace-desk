@@ -1,9 +1,9 @@
-import type { ModelTier } from "@/features/chat/types/chat";
+import type { KnowledgeGap, ModelTier } from "@/features/chat/types/chat";
 import { getEnv } from "@/lib/env";
 import { getBailianClient, resolveBailianModel } from "@/services/ai/bailian";
 import {
-  buildRefusalAnswer,
   buildCitationsFromMatches,
+  buildRefusalAnswer,
   composeMockAnswer,
 } from "@/services/ai/compose-mock-answer";
 import type {
@@ -12,8 +12,12 @@ import type {
 } from "@/services/retrieval/search-knowledge-base";
 
 function buildFollowups(question: string) {
+  const normalized = question.trim();
+  const shortQuestion =
+    normalized.length > 18 ? `${normalized.slice(0, 18).trim()}...` : normalized;
+
   return [
-    `继续把“${question.slice(0, 12)}”拆成页面模块`,
+    `继续把“${shortQuestion}”拆成页面或模块`,
     "补一份对应的接口或数据结构设计",
   ];
 }
@@ -130,17 +134,15 @@ function validateAnswerMarkdown(answerMarkdown: string, matches: SearchKnowledge
     .map((line) => line.trim())
     .filter(Boolean);
   const bulletLines = lines.filter((line) => /^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line));
-  const supportedBullets = bulletLines.filter((line) => scoreClaimSupport(line, matches) >= 2).slice(0, 4);
+  const supportedBullets = bulletLines
+    .filter((line) => scoreClaimSupport(line, matches) >= 2)
+    .slice(0, 4);
 
   if (supportedBullets.length === 0) {
     return null;
   }
 
-  return [
-    "根据当前命中的证据，可以确认：",
-    "",
-    ...supportedBullets,
-  ].join("\n");
+  return ["根据当前命中的证据，可以确认：", "", ...supportedBullets].join("\n");
 }
 
 async function requestModelAnswer(args: {
@@ -175,6 +177,7 @@ async function requestModelAnswer(args: {
 export type GroundedAnswerResult = {
   answerMarkdown: string;
   citations: Awaited<ReturnType<typeof buildCitationsFromMatches>>;
+  knowledgeGap?: KnowledgeGap;
   followups: string[];
 };
 
@@ -236,8 +239,11 @@ async function resolveGroundedAnswer(args: {
       eligibleSourceCount: args.diagnostics?.eligibleSourceCount ?? 0,
       totalChunkCount: args.diagnostics?.totalChunkCount ?? 0,
       matchedChunkCount: args.diagnostics?.matchedChunkCount ?? 0,
+      matchedSourceCount: args.diagnostics?.matchedSourceCount ?? 0,
       skippedSourceCount: args.diagnostics?.skippedSourceCount ?? 0,
       thinSourceCount: args.diagnostics?.thinSourceCount ?? 0,
+      lowTrustSourceCount: args.diagnostics?.lowTrustSourceCount ?? 0,
+      staleSourceCount: args.diagnostics?.staleSourceCount ?? 0,
       notes: [
         ...(args.diagnostics?.notes ?? []),
         "模型生成结果未通过证据校验，系统已自动回退为拒答。",
@@ -296,6 +302,7 @@ export async function generateGroundedAnswer(args: {
       finalResult = {
         answerMarkdown: event.answerMarkdown,
         citations: event.citations,
+        knowledgeGap: event.knowledgeGap,
         followups: event.followups,
       };
     }

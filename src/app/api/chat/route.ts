@@ -93,6 +93,7 @@ export async function POST(request: Request) {
               finalAssistantMessage = buildAssistantMessage({
                 answerMarkdown: event.answerMarkdown,
                 citations: event.citations,
+                knowledgeGap: event.knowledgeGap,
                 followups: event.followups,
                 assistantMessageId,
               });

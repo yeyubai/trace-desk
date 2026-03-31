@@ -4,6 +4,7 @@ import type {
   SourceDocumentKind,
   SourceDocumentSummary,
 } from "@/features/knowledge/types/knowledge";
+import { inferSourceGovernance } from "@/features/knowledge/lib/source-governance";
 import { splitSourceWithLangChain } from "@/services/rag/langchain-splitting";
 import { buildBatchEmbeddings } from "@/services/retrieval/embeddings";
 
@@ -213,6 +214,7 @@ function getContentQuality(args: { extractedTextLength: number; chunkCount: numb
 }
 
 function buildDiagnostics(args: {
+  kind: SourceDocumentKind;
   extractionMode: string;
   extractedText: string;
   chunks: Array<{
@@ -221,6 +223,7 @@ function buildDiagnostics(args: {
     keywords: string[];
   }>;
   warnings?: string[];
+  sourceUrl?: string;
 }) {
   const extractedTextLength = args.extractedText.length;
   const contentQuality = getContentQuality({
@@ -260,6 +263,13 @@ function buildDiagnostics(args: {
     retrievalGate,
     ...(retrievalGateReason ? { retrievalGateReason } : {}),
     warnings,
+    governance: inferSourceGovernance({
+      kind: args.kind,
+      contentQuality,
+      extractionMode: args.extractionMode,
+      retrievalGate,
+      sourceUrl: args.sourceUrl,
+    }),
     chunkPreviews: args.chunks.slice(0, 3).map((chunk) => ({
       id: chunk.id,
       excerpt: chunk.excerpt,
@@ -520,10 +530,12 @@ export async function createImportedUrlSource(input: ImportUrlInput) {
   });
   const status = chunks.length > 0 ? "available" : "failed";
   const diagnostics = buildDiagnostics({
+    kind: "url",
     extractionMode: urlDocument.extractionMode,
     extractedText: urlDocument.text,
     chunks,
     warnings: urlDocument.warnings,
+    sourceUrl: input.url,
   });
   const retrieval = buildRetrievalState({
     diagnostics,
@@ -573,6 +585,7 @@ export async function createUploadedFileSource(input: {
 
   if (kind === "pdf") {
     const diagnostics = buildDiagnostics({
+      kind,
       extractionMode: "pdf-unparsed",
       extractedText: "",
       chunks: [],
@@ -613,6 +626,7 @@ export async function createUploadedFileSource(input: {
   });
   const status = chunks.length > 0 ? "available" : "failed";
   const diagnostics = buildDiagnostics({
+    kind,
     extractionMode: kind === "markdown" ? "markdown-stripped" : "plain-text",
     extractedText: normalizedContent,
     chunks,

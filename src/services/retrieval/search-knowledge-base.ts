@@ -1,4 +1,8 @@
 import { getEnv } from "@/lib/env";
+import {
+  getSourceFreshnessStatus,
+  getSourceGovernance,
+} from "@/features/knowledge/lib/source-governance";
 import { getPostgresPool } from "@/services/db/postgres";
 import {
   getSourceChunkRecordsByKnowledgeBaseId,
@@ -19,6 +23,8 @@ export type SearchKnowledgeMatch = {
   lexicalScore: number;
   semanticScore: number;
   matchedTerms: string[];
+  trustLevel: "high" | "medium" | "low";
+  freshnessStatus: "fresh" | "aging" | "stale";
 };
 
 export type RetrievalDiagnostics = {
@@ -26,8 +32,11 @@ export type RetrievalDiagnostics = {
   eligibleSourceCount: number;
   totalChunkCount: number;
   matchedChunkCount: number;
+  matchedSourceCount: number;
   skippedSourceCount: number;
   thinSourceCount: number;
+  lowTrustSourceCount: number;
+  staleSourceCount: number;
   notes: string[];
 };
 
@@ -40,11 +49,39 @@ type LiveCandidateRow = {
   semantic_score: number | string | null;
   content_quality: string | null;
   extraction_mode: string | null;
+  trust_level: string | null;
+  updated_at: Date | string;
 };
 
 function shouldUseLivePgVector() {
   const env = getEnv();
   return env.APP_DATA_MODE === "live" && Boolean(env.DATABASE_URL);
+}
+
+function scoreTrustLevel(level: SearchKnowledgeMatch["trustLevel"]) {
+  switch (level) {
+    case "high":
+      return 1.2;
+    case "medium":
+      return 0;
+    case "low":
+      return -2.4;
+    default:
+      return 0;
+  }
+}
+
+function scoreFreshnessStatus(status: SearchKnowledgeMatch["freshnessStatus"]) {
+  switch (status) {
+    case "fresh":
+      return 0.4;
+    case "aging":
+      return -0.4;
+    case "stale":
+      return -1.2;
+    default:
+      return 0;
+  }
 }
 
 function toPgVector(value: number[]) {
@@ -134,6 +171,17 @@ async function enrichChunkEmbeddings(
 function normalizeLiveCandidate(row: LiveCandidateRow, query: string): SearchKnowledgeMatch | null {
   const lexicalScoring = scoreChunk(query, row.keywords ?? [], row.content);
   const semanticScore = Math.max(Number(row.semantic_score ?? 0), 0);
+  const trustLevel =
+    row.trust_level === "high" || row.trust_level === "medium" || row.trust_level === "low"
+      ? row.trust_level
+      : row.content_quality === "strong"
+        ? "high"
+        : row.content_quality === "thin"
+          ? "medium"
+          : "low";
+  const freshnessStatus = getSourceFreshnessStatus(
+    typeof row.updated_at === "string" ? row.updated_at : row.updated_at.toISOString(),
+  );
   let score = lexicalScoring.lexicalScore * 1.6 + semanticScore * 6;
 
   if (row.content_quality === "thin") {
@@ -143,6 +191,9 @@ function normalizeLiveCandidate(row: LiveCandidateRow, query: string): SearchKno
   if (row.extraction_mode === "body-fallback") {
     score -= 2;
   }
+
+  score += scoreTrustLevel(trustLevel);
+  score += scoreFreshnessStatus(freshnessStatus);
 
   if (lexicalScoring.lexicalScore <= 0 && semanticScore < 0.18) {
     return null;
@@ -161,6 +212,8 @@ function normalizeLiveCandidate(row: LiveCandidateRow, query: string): SearchKno
     lexicalScore: lexicalScoring.lexicalScore,
     semanticScore,
     matchedTerms: lexicalScoring.matchedTerms,
+    trustLevel,
+    freshnessStatus,
   };
 }
 
@@ -209,12 +262,15 @@ async function retrieveLiveKnowledgeMatches(args: {
           sc.keywords,
           GREATEST(1 - (sc.embedding <=> $2::vector), 0) AS semantic_score,
           COALESCE(sd.diagnostics->>'contentQuality', 'empty') AS content_quality,
-          COALESCE(sd.diagnostics->>'extractionMode', 'unknown') AS extraction_mode
+          COALESCE(sd.diagnostics->>'extractionMode', 'unknown') AS extraction_mode,
+          COALESCE(sd.diagnostics->'governance'->>'trustLevel', 'medium') AS trust_level,
+          sd.updated_at
         FROM source_chunk sc
         INNER JOIN source_document sd ON sd.id = sc.source_document_id
         WHERE sc.knowledge_base_id = $1
           AND sc.embedding IS NOT NULL
           AND sd.retrieval_status = 'retrievable'
+          AND sd.duplicate_of_source_id IS NULL
           AND COALESCE(sd.diagnostics->>'retrievalGate', 'blocked') = 'eligible'
         ORDER BY sc.embedding <=> $2::vector ASC
         LIMIT $3
@@ -231,11 +287,14 @@ async function retrieveLiveKnowledgeMatches(args: {
           sc.keywords,
           0::double precision AS semantic_score,
           COALESCE(sd.diagnostics->>'contentQuality', 'empty') AS content_quality,
-          COALESCE(sd.diagnostics->>'extractionMode', 'unknown') AS extraction_mode
+          COALESCE(sd.diagnostics->>'extractionMode', 'unknown') AS extraction_mode,
+          COALESCE(sd.diagnostics->'governance'->>'trustLevel', 'medium') AS trust_level,
+          sd.updated_at
         FROM source_chunk sc
         INNER JOIN source_document sd ON sd.id = sc.source_document_id
         WHERE sc.knowledge_base_id = $1
           AND sd.retrieval_status = 'retrievable'
+          AND sd.duplicate_of_source_id IS NULL
           AND COALESCE(sd.diagnostics->>'retrievalGate', 'blocked') = 'eligible'
           AND (
             COALESCE(sc.keywords, ARRAY[]::text[]) && $2::text[]
@@ -279,7 +338,9 @@ async function retrieveInMemoryKnowledgeMatches(args: {
   ]);
   const eligibleSourceMap = new Map(
     sources
-      .filter((source) => source.retrievalStatus === "retrievable")
+      .filter(
+        (source) => source.retrievalStatus === "retrievable" && !source.duplicateOf,
+      )
       .map((source) => [source.id, source]),
   );
   const chunks = await enrichChunkEmbeddings(rawChunks);
@@ -294,6 +355,12 @@ async function retrieveInMemoryKnowledgeMatches(args: {
 
       const lexicalScoring = scoreChunk(args.query, chunk.keywords, chunk.content);
       const semanticScore = Math.max(cosineSimilarity(queryEmbedding, chunk.embedding), 0);
+      const governance = getSourceGovernance({
+        diagnostics: source.diagnostics,
+        kind: source.kind,
+        sourceUrl: source.url,
+      });
+      const freshnessStatus = getSourceFreshnessStatus(source.updatedAt);
       let score = lexicalScoring.lexicalScore * 1.6 + semanticScore * 6;
 
       if (source.diagnostics.contentQuality === "thin") {
@@ -303,6 +370,9 @@ async function retrieveInMemoryKnowledgeMatches(args: {
       if (source.diagnostics.extractionMode === "body-fallback") {
         score -= 2;
       }
+
+      score += scoreTrustLevel(governance.trustLevel);
+      score += scoreFreshnessStatus(freshnessStatus);
 
       if (lexicalScoring.lexicalScore <= 0 && semanticScore < 0.18) {
         return [];
@@ -319,6 +389,8 @@ async function retrieveInMemoryKnowledgeMatches(args: {
               lexicalScore: lexicalScoring.lexicalScore,
               semanticScore,
               matchedTerms: lexicalScoring.matchedTerms,
+              trustLevel: governance.trustLevel,
+              freshnessStatus,
             } satisfies SearchKnowledgeMatch,
           ]
         : [];
@@ -332,8 +404,21 @@ export async function buildRetrievalDiagnostics(args: {
 }) {
   const sources = await listSourceDocumentsByKnowledgeBaseId(args.knowledgeBaseId);
   const eligibleSources = sources.filter((source) => source.retrievalStatus === "retrievable");
+  const matchedSourceCount = Math.min(args.matchedChunkCount, eligibleSources.length);
   const thinSourceCount = eligibleSources.filter(
     (source) => source.diagnostics.contentQuality === "thin",
+  ).length;
+  const lowTrustSourceCount = eligibleSources.filter((source) => {
+    const governance = getSourceGovernance({
+      diagnostics: source.diagnostics,
+      kind: source.kind,
+      sourceUrl: source.url,
+    });
+
+    return governance.trustLevel === "low";
+  }).length;
+  const staleSourceCount = eligibleSources.filter(
+    (source) => getSourceFreshnessStatus(source.updatedAt) === "stale",
   ).length;
   const skippedSourceCount = sources.length - eligibleSources.length;
   const totalChunkCount = (await getSourceChunkRecordsByKnowledgeBaseId(args.knowledgeBaseId)).length;
@@ -351,13 +436,24 @@ export async function buildRetrievalDiagnostics(args: {
     notes.push("当前问题没有命中任何通过质量门控的可用 chunk。");
   }
 
+  if (lowTrustSourceCount > 0) {
+    notes.push("部分可检索来源的可信级别偏低，应优先作为线索而不是结论。");
+  }
+
+  if (staleSourceCount > 0) {
+    notes.push("知识库里仍有超过 30 天未更新的可检索来源，使用时需注意时效性。");
+  }
+
   return {
     query: args.query,
     eligibleSourceCount: eligibleSources.length,
     totalChunkCount,
     matchedChunkCount: args.matchedChunkCount,
+    matchedSourceCount,
     skippedSourceCount,
     thinSourceCount,
+    lowTrustSourceCount,
+    staleSourceCount,
     notes,
   } satisfies RetrievalDiagnostics;
 }
@@ -372,17 +468,57 @@ export async function retrieveKnowledgeMatches(args: {
 }
 
 export function rerankKnowledgeMatches(matches: SearchKnowledgeMatch[]) {
-  return [...matches]
-    .sort((left, right) => {
-      if (right.score !== left.score) {
-        return right.score - left.score;
-      }
+  const sorted = [...matches].sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score;
+    }
 
-      if (right.semanticScore !== left.semanticScore) {
-        return right.semanticScore - left.semanticScore;
-      }
+    if (right.semanticScore !== left.semanticScore) {
+      return right.semanticScore - left.semanticScore;
+    }
 
-      return right.lexicalScore - left.lexicalScore;
-    })
-    .slice(0, 5);
+    return right.lexicalScore - left.lexicalScore;
+  });
+  const result: SearchKnowledgeMatch[] = [];
+  const sourceUsage = new Map<string, number>();
+
+  for (const match of sorted) {
+    const used = sourceUsage.get(match.sourceId) ?? 0;
+
+    if (used >= 2) {
+      continue;
+    }
+
+    if (result.length < 3 && used >= 1) {
+      continue;
+    }
+
+    result.push(match);
+    sourceUsage.set(match.sourceId, used + 1);
+
+    if (result.length >= 5) {
+      return result;
+    }
+  }
+
+  for (const match of sorted) {
+    if (result.some((item) => item.chunkId === match.chunkId)) {
+      continue;
+    }
+
+    const used = sourceUsage.get(match.sourceId) ?? 0;
+
+    if (used >= 2) {
+      continue;
+    }
+
+    result.push(match);
+    sourceUsage.set(match.sourceId, used + 1);
+
+    if (result.length >= 5) {
+      break;
+    }
+  }
+
+  return result;
 }

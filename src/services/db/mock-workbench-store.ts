@@ -5,6 +5,10 @@ import type {
   ChatSession,
   CitationItem,
 } from "@/features/chat/types/chat";
+import {
+  normalizeSourceIdentity,
+  resolveCanonicalSourceId,
+} from "@/features/knowledge/lib/source-identity";
 import type {
   SourceContentQuality,
   KnowledgeBaseOverview,
@@ -511,19 +515,6 @@ function writeState(nextState: MockWorkbenchState) {
   fs.writeFileSync(MOCK_STATE_FILE, JSON.stringify(nextState, null, 2), "utf-8");
 }
 
-function normalizeDuplicateKey(source: Pick<SourceDocumentSummary, "kind" | "title" | "url">) {
-  if (source.url) {
-    try {
-      const parsed = new URL(source.url);
-      return `url:${parsed.hostname}${parsed.pathname}`.toLowerCase();
-    } catch {
-      return `url:${source.url}`.toLowerCase();
-    }
-  }
-
-  return `file:${source.kind}:${source.title.trim().toLowerCase()}`;
-}
-
 export function getKnowledgeBaseOverview() {
   return structuredClone(readState().knowledgeBase);
 }
@@ -624,14 +615,19 @@ export function appendMessagesToSession(args: SessionAppendArgs) {
 
 export function addSourceDocument(args: SourceDocumentInsert) {
   const state = readState();
-  const duplicateOf = state.sources.find(
-    (existing) => normalizeDuplicateKey(existing) === normalizeDuplicateKey(args.source),
-  );
+  const duplicateIdentity = normalizeSourceIdentity(args.source);
+  const duplicateOf = state.sources.find((existing) => {
+    if (existing.id === args.source.id) {
+      return false;
+    }
+
+    return normalizeSourceIdentity(existing) === duplicateIdentity;
+  });
   const sourceWithDuplicateHint: SourceDocumentSummary = duplicateOf
     ? {
         ...args.source,
         duplicateOf: {
-          sourceId: duplicateOf.id,
+          sourceId: resolveCanonicalSourceId(duplicateOf),
           title: duplicateOf.title,
         },
       }

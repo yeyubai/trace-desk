@@ -18,11 +18,11 @@ import { useFeedbackMutation } from "@/features/chat/hooks/useChatMutations";
 import type { SendChatMessageFormValues } from "@/features/chat/schemas/send-message";
 import {
   type ChatFeedbackRating,
-  MODEL_TIER_META,
   type ChatMessage,
   type ChatMessagePart,
   type ChatSession,
   type ChatWorkspaceState,
+  MODEL_TIER_META,
 } from "@/features/chat/types/chat";
 import { cn } from "@/lib/cn";
 
@@ -54,16 +54,17 @@ function findLastAssistantMessage(messages: ChatMessage[]) {
 }
 
 function findStatusPart(message: ChatMessage | null) {
-  return message?.parts.find((part): part is Extract<ChatMessagePart, { type: "status" }> => {
-    return part.type === "status";
-  }) ?? null;
+  return (
+    message?.parts.find((part): part is Extract<ChatMessagePart, { type: "status" }> => {
+      return part.type === "status";
+    }) ?? null
+  );
 }
 
 function hasCitationPart(message: ChatMessage | null) {
   return (
-    message?.parts.some(
-      (part) => part.type === "citations" && part.citations.length > 0,
-    ) ?? false
+    message?.parts.some((part) => part.type === "citations" && part.citations.length > 0) ??
+    false
   );
 }
 
@@ -75,16 +76,17 @@ function resolveWorkspaceState(args: {
   const lastAssistantMessage = findLastAssistantMessage(args.session.messages);
   const statusPart = findStatusPart(lastAssistantMessage);
   const tierMeta = MODEL_TIER_META[args.session.modelTier];
-  const isRefusal = Boolean(lastAssistantMessage) && !statusPart && !hasCitationPart(lastAssistantMessage);
+  const isRefusal =
+    Boolean(lastAssistantMessage) && !statusPart && !hasCitationPart(lastAssistantMessage);
 
   if (args.isSending) {
     return {
       state: args.sendIntent === "retry" ? "retrying" : "streaming",
-      title: args.sendIntent === "retry" ? "正在重新生成" : "正在生成",
+      title: args.sendIntent === "retry" ? "正在重生成标准回复" : "正在生成回答",
       description:
         args.sendIntent === "retry"
-          ? `继续使用 ${tierMeta.label} 档位重新组织回答。`
-          : `正在使用 ${tierMeta.label} 档位检索证据并返回回答。`,
+          ? `继续使用 ${tierMeta.label} 档位重新组织答案。`
+          : `正在使用 ${tierMeta.label} 档位检索证据并组织团队可复用回答。`,
       toneClassName: "border-accent/20 bg-accent-soft text-accent-strong",
       Icon: CircleDot,
     } satisfies WorkspaceStateMeta;
@@ -93,7 +95,7 @@ function resolveWorkspaceState(args: {
   if (statusPart?.status === "failed") {
     return {
       state: "failed",
-      title: "回答已中断",
+      title: "回答生成中断",
       description: statusPart.label || "本轮回答未完整返回。",
       toneClassName: "border-warning/25 bg-warning-soft text-warning",
       Icon: AlertTriangle,
@@ -103,8 +105,8 @@ function resolveWorkspaceState(args: {
   if (isRefusal) {
     return {
       state: "refused",
-      title: "已明确拒答",
-      description: "当前知识库没有足够可靠的证据。",
+      title: "已沉淀为知识缺口",
+      description: "当前资料不足以支撑可靠回答，系统已把这次失败显式记录下来。",
       toneClassName: "border-warning/25 bg-warning-soft text-warning",
       Icon: AlertTriangle,
     } satisfies WorkspaceStateMeta;
@@ -112,8 +114,8 @@ function resolveWorkspaceState(args: {
 
   return {
     state: "ready",
-    title: "可继续追问",
-    description: `当前使用 ${tierMeta.label} 档位。`,
+    title: "可继续答疑",
+    description: `当前使用 ${tierMeta.label} 档位，你可以继续追问或整理标准回复。`,
     toneClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
     Icon: CircleCheckBig,
   } satisfies WorkspaceStateMeta;
@@ -145,8 +147,7 @@ export function ChatWorkspace({
   const tierMeta = MODEL_TIER_META[session.modelTier];
   const activeDraftFromFollowup =
     draftFromFollowup?.sessionId === session.id ? draftFromFollowup.value : null;
-  const activeSendIntent =
-    sendIntent?.sessionId === session.id ? sendIntent.value : null;
+  const activeSendIntent = sendIntent?.sessionId === session.id ? sendIntent.value : null;
   const hasMessages = session.messages.length > 0;
 
   const mergedPrompts = activeDraftFromFollowup
@@ -192,6 +193,9 @@ export function ChatWorkspace({
           <div className="min-w-0">
             <p className="truncate text-lg font-medium tracking-[-0.03em] text-foreground">
               {session.title}
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              围绕当前资料完成团队答疑，并把高质量回答沉淀成可复用标准回复。
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge variant="accent">
@@ -277,15 +281,15 @@ export function ChatWorkspace({
               </>
             ) : (
               <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-3 text-center">
-                <p className="text-[11px] font-medium tracking-[0.2em] text-accent-strong uppercase">
-                  新对话
+                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-accent-strong">
+                  Team Reply Flow
                 </p>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-medium tracking-[-0.04em] text-foreground">
-                    开始第一条消息
+                    发起第一轮团队答疑
                   </h2>
                   <p className="max-w-xl text-sm leading-7 text-muted">
-                    左侧管理会话，右侧只保留消息流和输入框。
+                    这里不是普通聊天框。你可以直接提一个真实业务问题，或让系统先生成一条可复用的标准回复草稿。
                   </p>
                 </div>
               </div>

@@ -12,6 +12,21 @@ export type WorkbenchSignal = {
   detail: string;
 };
 
+export type BusinessMetric = {
+  id: string;
+  label: string;
+  value: string;
+  target: string;
+  detail: string;
+};
+
+export type FunnelStep = {
+  id: string;
+  label: string;
+  count: number;
+  detail: string;
+};
+
 export type FeedbackSummary = {
   total: number;
   positive: number;
@@ -32,6 +47,8 @@ export type WorkbenchSnapshot = {
   sessions: ChatSession[];
   sources: SourceDocumentSummary[];
   signals: WorkbenchSignal[];
+  businessMetrics: BusinessMetric[];
+  funnel: FunnelStep[];
   suggestedPrompts: string[];
   runtime: RuntimeOverview;
   feedbackSummary: FeedbackSummary;

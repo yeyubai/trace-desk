@@ -3,6 +3,17 @@ export type SourceDocumentKind = "pdf" | "markdown" | "txt" | "url";
 export type SourceDocumentStatus = "available" | "indexing" | "failed";
 export type SourceRetrievalStatus = "retrievable" | "stored_only" | "unavailable";
 export type SourceContentQuality = "strong" | "thin" | "empty";
+export type SourceTrustLevel = "high" | "medium" | "low";
+export type SourceFreshnessStatus = "fresh" | "aging" | "stale";
+export type SourceReviewStatus = "verified" | "needs_review" | "blocked";
+
+export type SourceGovernance = {
+  ownerLabel: string;
+  trustLevel: SourceTrustLevel;
+  reviewStatus: SourceReviewStatus;
+  coverageLabel: string;
+  reviewSummary: string;
+};
 
 export type SourceChunkPreview = {
   id: string;
@@ -18,6 +29,7 @@ export type SourceDiagnostics = {
   retrievalGateReason?: string;
   warnings: string[];
   chunkPreviews: SourceChunkPreview[];
+  governance?: SourceGovernance;
 };
 
 export type KnowledgeBaseOverview = {

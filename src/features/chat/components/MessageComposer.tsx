@@ -97,7 +97,9 @@ export function MessageComposer({
                     ? "border-accent bg-accent-soft text-accent-strong"
                     : "border-line bg-white text-muted hover:border-accent hover:bg-accent-soft/60 hover:text-foreground",
                 )}
-                onClick={() => form.setValue("modelTier", option.value, { shouldValidate: true })}
+                onClick={() =>
+                  form.setValue("modelTier", option.value, { shouldValidate: true })
+                }
               >
                 <span className="font-medium">{option.label}</span>
                 <span className="ml-1 text-xs opacity-75">{option.badgeLabel}</span>
@@ -109,7 +111,7 @@ export function MessageComposer({
         <Textarea
           disabled={isSubmitting}
           className="mt-3 min-h-[120px] resize-none rounded-[1.2rem] border border-line/80 bg-panel px-4 py-3 text-[15px] leading-7 shadow-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-70"
-          placeholder="围绕当前知识库直接提问，输入框会始终停留在这里。"
+          placeholder="围绕当前资料直接提问，或让系统生成一条可复用的团队标准回复。"
           {...form.register("message")}
         />
 
@@ -126,7 +128,7 @@ export function MessageComposer({
         ) : null}
 
         <div className="mt-3 flex flex-wrap gap-2">
-          {suggestedPrompts.slice(0, 2).map((prompt) => (
+          {suggestedPrompts.slice(0, 3).map((prompt) => (
             <button
               key={prompt}
               type="button"
@@ -143,8 +145,8 @@ export function MessageComposer({
           <div className="space-y-1 px-1">
             <p className="text-xs text-muted">
               {isSubmitting
-                ? `当前已锁定 ${selectedTierMeta.label} 档位，正在返回回答。`
-                : "未命中时会明确拒答，不会伪造引用。"}
+                ? `当前已锁定 ${selectedTierMeta.label} 档位，正在生成团队可复用回答。`
+                : "未命中时会明确拒答，并把失败沉淀成待补知识缺口。"}
             </p>
             <p className="text-[11px] text-muted">
               {messageLength}/{MAX_CHAT_MESSAGE_LENGTH}
@@ -155,12 +157,12 @@ export function MessageComposer({
             {isSubmitting ? (
               <>
                 <LoaderCircle className="size-4 animate-spin" />
-                正在回答
+                正在生成
               </>
             ) : (
               <>
                 <SendHorizontal className="size-4" />
-                发送问题
+                发起答疑
               </>
             )}
           </Button>

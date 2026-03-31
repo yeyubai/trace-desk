@@ -1,13 +1,15 @@
 import type {
   ChatMessage,
   ChatSession,
+  CitationItem,
+  KnowledgeGap,
   SendChatMessageInput,
 } from "@/features/chat/types/chat";
 import { buildRetrievalQuery } from "@/features/chat/server/build-chat-context";
 import { generateGroundedAnswer } from "@/services/ai/generate-grounded-answer";
 import {
-  retrieveKnowledgeMatches,
   rerankKnowledgeMatches,
+  retrieveKnowledgeMatches,
 } from "@/services/retrieval/search-knowledge-base";
 
 type BuildMessageIds = {
@@ -15,10 +17,7 @@ type BuildMessageIds = {
   assistantMessageId?: string;
 };
 
-export function buildUserMessage(
-  question: string,
-  ids?: BuildMessageIds,
-): ChatMessage {
+export function buildUserMessage(question: string, ids?: BuildMessageIds): ChatMessage {
   return {
     id: ids?.userMessageId ?? crypto.randomUUID(),
     role: "user",
@@ -56,13 +55,8 @@ export function buildAssistantDraftMessage(assistantMessageId?: string): ChatMes
 
 export function buildAssistantMessage(args: {
   answerMarkdown: string;
-  citations: Array<{
-    id: string;
-    sourceId: string;
-    sourceTitle: string;
-    citationLabel: string;
-    excerpt: string;
-  }>;
+  citations: CitationItem[];
+  knowledgeGap?: KnowledgeGap;
   followups: string[];
   assistantMessageId?: string;
 }): ChatMessage {
@@ -82,6 +76,15 @@ export function buildAssistantMessage(args: {
               id: crypto.randomUUID(),
               type: "citations" as const,
               citations: args.citations,
+            },
+          ]
+        : []),
+      ...(args.knowledgeGap
+        ? [
+            {
+              id: crypto.randomUUID(),
+              type: "knowledge_gap" as const,
+              gap: args.knowledgeGap,
             },
           ]
         : []),

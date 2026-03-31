@@ -2,10 +2,21 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Quote, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
-import type { ChatMessage } from "@/features/chat/types/chat";
+import {
+  AlertTriangle,
+  Quote,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatTimestamp } from "@/lib/formatters";
+import { Badge } from "@/components/ui/badge";
+import type { ChatMessage } from "@/features/chat/types/chat";
+import {
+  formatFreshnessLabel,
+  formatTrustLevelLabel,
+} from "@/features/knowledge/lib/source-governance";
 
 type ChatMessageCardProps = {
   message: ChatMessage;
@@ -28,12 +39,7 @@ export function ChatMessageCard({
   );
 
   return (
-    <article
-      className={cn(
-        "w-full",
-        isAssistant ? "self-start" : "self-end",
-      )}
-    >
+    <article className={cn("w-full", isAssistant ? "self-start" : "self-end")}>
       <div
         className={cn(
           "max-w-[88%] rounded-[1.45rem] px-4 py-3 sm:px-5 sm:py-4",
@@ -96,18 +102,59 @@ export function ChatMessageCard({
                         type="button"
                         key={citation.id}
                         className={cn(
-                          "rounded-full border px-3 py-1.5 text-xs transition-colors",
+                          "rounded-2xl border px-3 py-2 text-left text-xs transition-colors",
                           isAssistant
                             ? "border-accent/16 bg-accent-soft text-accent-strong hover:border-accent hover:bg-accent/12"
                             : "border-white/16 bg-white/10 text-white hover:bg-white/16",
                         )}
                         onClick={() => onSelectCitation?.(citation.sourceId, citation.excerpt)}
                       >
-                        <span className="font-mono">{citation.citationLabel}</span>{" "}
-                        {citation.sourceTitle}
+                        <div>
+                          <span className="font-mono">{citation.citationLabel}</span>{" "}
+                          {citation.sourceTitle}
+                        </div>
+                        {citation.trustLevel || citation.freshnessStatus ? (
+                          <div
+                            className={cn(
+                              "mt-1 flex flex-wrap gap-1.5 text-[11px]",
+                              isAssistant ? "text-accent-strong/80" : "text-white/72",
+                            )}
+                          >
+                            {citation.trustLevel ? (
+                              <span>{formatTrustLevelLabel(citation.trustLevel)}</span>
+                            ) : null}
+                            {citation.freshnessStatus ? (
+                              <span>{formatFreshnessLabel(citation.freshnessStatus)}</span>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </button>
                     ))}
                   </div>
+                </div>
+              );
+            }
+
+            if (part.type === "knowledge_gap") {
+              return (
+                <div
+                  key={part.id}
+                  className="rounded-[1.2rem] border border-warning/25 bg-warning-soft p-4"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-warning">
+                    <AlertTriangle className="size-4" />
+                    {part.gap.title}
+                  </div>
+                  <p className="mt-2 text-sm leading-7 text-foreground">{part.gap.reason}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant="warning">待补知识</Badge>
+                    <Badge variant="neutral">问题：{part.gap.query}</Badge>
+                  </div>
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-muted">
+                    {part.gap.suggestedActions.map((action) => (
+                      <li key={action}>{action}</li>
+                    ))}
+                  </ul>
                 </div>
               );
             }

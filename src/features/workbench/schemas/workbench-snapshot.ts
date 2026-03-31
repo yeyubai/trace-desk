@@ -14,6 +14,8 @@ const citationItemSchema = z.object({
   sourceTitle: z.string().trim().min(1),
   citationLabel: z.string().trim().min(1),
   excerpt: z.string(),
+  trustLevel: z.enum(["high", "medium", "low"]).optional(),
+  freshnessStatus: z.enum(["fresh", "aging", "stale"]).optional(),
 });
 
 const chatMessagePartSchema = z.discriminatedUnion("type", [
@@ -26,6 +28,16 @@ const chatMessagePartSchema = z.discriminatedUnion("type", [
     id: z.string().trim().min(1),
     type: z.literal("citations"),
     citations: z.array(citationItemSchema),
+  }),
+  z.object({
+    id: z.string().trim().min(1),
+    type: z.literal("knowledge_gap"),
+    gap: z.object({
+      title: z.string().trim().min(1),
+      query: z.string().trim().min(1),
+      reason: z.string().trim().min(1),
+      suggestedActions: z.array(z.string().trim().min(1)),
+    }),
   }),
   z.object({
     id: z.string().trim().min(1),
@@ -94,6 +106,15 @@ const sourceDocumentSummarySchema = z.object({
         keywordPreview: z.array(z.string().trim().min(1)),
       }),
     ),
+    governance: z
+      .object({
+        ownerLabel: z.string().trim().min(1),
+        trustLevel: z.enum(["high", "medium", "low"]),
+        reviewStatus: z.enum(["verified", "needs_review", "blocked"]),
+        coverageLabel: z.string().trim().min(1),
+        reviewSummary: z.string().trim().min(1),
+      })
+      .optional(),
   }),
   duplicateOf: z
     .object({
@@ -134,6 +155,21 @@ const workbenchSignalSchema = z.object({
   detail: z.string().trim().min(1),
 });
 
+const businessMetricSchema = z.object({
+  id: z.string().trim().min(1),
+  label: z.string().trim().min(1),
+  value: z.string().trim().min(1),
+  target: z.string().trim().min(1),
+  detail: z.string().trim().min(1),
+});
+
+const funnelStepSchema = z.object({
+  id: z.string().trim().min(1),
+  label: z.string().trim().min(1),
+  count: z.number().int().nonnegative(),
+  detail: z.string().trim().min(1),
+});
+
 const feedbackSummarySchema = z.object({
   total: z.number().int().nonnegative(),
   positive: z.number().int().nonnegative(),
@@ -154,6 +190,8 @@ export const workbenchSnapshotSchema = z.object({
   sessions: z.array(chatSessionSchema),
   sources: z.array(sourceDocumentSummarySchema),
   signals: z.array(workbenchSignalSchema),
+  businessMetrics: z.array(businessMetricSchema),
+  funnel: z.array(funnelStepSchema),
   suggestedPrompts: z.array(z.string().trim().min(1)),
   runtime: runtimeOverviewSchema,
   feedbackSummary: feedbackSummarySchema,

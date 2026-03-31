@@ -16,9 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SessionRail } from "@/features/chat/components/SessionRail";
 import {
-  MODEL_TIER_META,
   type ChatMessage,
   type ChatSession,
+  MODEL_TIER_META,
 } from "@/features/chat/types/chat";
 import { FeedbackSummaryPanel } from "@/features/workbench/components/FeedbackSummaryPanel";
 import { PageHeader } from "@/features/workbench/components/PageHeader";
@@ -84,7 +84,7 @@ function getSessionSummary(session: ChatSession) {
     summary:
       latestAnswer ||
       latestQuestion ||
-      "当前会话还没有可展示的文本摘要，但可以继续恢复到问答页查看完整上下文。",
+      "当前会话还没有可展示的摘要，但你可以继续恢复到问答页查看完整上下文。",
     latestQuestion,
     followups: getLatestFollowups(session),
     userTurnCount: userMessages.length,
@@ -158,8 +158,8 @@ export function SessionsPageContent({
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
       <PageHeader
-        title="会话与反馈"
-        description="回看之前的问题、继续追问，并汇总回答反馈。"
+        title="标准回复与会话复用"
+        description="回看之前的答疑过程，继续追问，把高质量回答沉淀成团队后续可以直接复用的标准回复。"
       />
 
       <section className="grid min-h-0 flex-1 gap-5 overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)_320px]">
@@ -181,12 +181,12 @@ export function SessionsPageContent({
                 <CardContent className="space-y-6">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <p className="section-kicker">Session Console</p>
+                      <p className="section-kicker">Reusable Session</p>
                       <h2 className="mt-2 font-serif text-3xl tracking-[-0.05em] text-foreground">
                         {selectedSession.title}
                       </h2>
                       <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
-                        最近更新于 {formatTimestamp(selectedSession.updatedAt)}，会话上下文仍可直接恢复到问答页继续追问。
+                        最近更新于 {formatTimestamp(selectedSession.updatedAt)}。这段对话既是历史记录，也是后续标准回复和知识沉淀的原始材料。
                       </p>
                     </div>
 
@@ -226,7 +226,7 @@ export function SessionsPageContent({
 
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
                     <div className="rounded-[1.5rem] border border-line bg-panel-strong p-5">
-                      <p className="text-xs font-medium tracking-[0.2em] text-muted uppercase">
+                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted">
                         Session Summary
                       </p>
                       <p className="mt-3 text-sm leading-7 text-foreground">
@@ -244,29 +244,43 @@ export function SessionsPageContent({
                     </div>
 
                     <div className="rounded-[1.5rem] border border-accent/20 bg-accent-soft p-5">
-                      <p className="text-xs font-medium tracking-[0.2em] text-accent-strong uppercase">
+                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent-strong">
                         Continue
                       </p>
                       <h3 className="mt-3 text-lg font-medium text-foreground">
-                        继续这段对话
+                        继续处理这段答疑
                       </h3>
                       <p className="mt-2 text-sm leading-7 text-muted">
-                        跳转到问答页后会恢复当前会话，你可以直接沿着这段上下文继续追问。
+                        你可以直接恢复到问答页继续追问，也可以让系统基于这段会话生成一条新的标准回复草稿。
                       </p>
-                      <Button asChild className="mt-5 w-full justify-between">
-                        <Link
-                          href={{
-                            pathname: "/chat",
-                            query: { sessionId: selectedSession.id },
-                          }}
-                        >
-                          打开问答页继续追问
-                          <MoveRight className="size-4" />
-                        </Link>
-                      </Button>
-                      <p className="mt-3 text-xs text-accent-strong/80">
-                        如果你想沿用右侧建议，可先复制建议文本，再进入问答页继续。
-                      </p>
+                      <div className="mt-5 space-y-3">
+                        <Button asChild className="w-full justify-between">
+                          <Link
+                            href={{
+                              pathname: "/chat",
+                              query: { sessionId: selectedSession.id },
+                            }}
+                          >
+                            打开问答页继续追问
+                            <MoveRight className="size-4" />
+                          </Link>
+                        </Button>
+                        <Button asChild variant="secondary" className="w-full justify-between">
+                          <Link
+                            href={{
+                              pathname: "/chat",
+                              query: {
+                                sessionId: selectedSession.id,
+                                draft:
+                                  "请基于这段会话和当前引用，整理一条可直接复用的团队标准回复草稿。",
+                              },
+                            }}
+                          >
+                            生成标准回复草稿
+                            <Sparkles className="size-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -276,8 +290,8 @@ export function SessionsPageContent({
                 <CardContent className="space-y-5">
                   <SectionHeading
                     eyebrow="Preview"
-                    title="消息预览"
-                    description="保留最近几轮上下文，便于快速判断这段会话说到了哪里。"
+                    title="会话预览"
+                    description="保留最近几轮上下文，便于快速判断这段答疑是否值得继续追问或沉淀成标准回复。"
                     action={
                       <div className="rounded-full bg-panel px-3 py-1 text-xs text-muted">
                         最近 {sessionSummary.previewMessages.length} 条
@@ -288,14 +302,10 @@ export function SessionsPageContent({
                   <div className="space-y-3">
                     {sessionSummary.previewMessages.map((message) => {
                       const citationCount = message.parts.reduce((total, part) => {
-                        return part.type === "citations"
-                          ? total + part.citations.length
-                          : total;
+                        return part.type === "citations" ? total + part.citations.length : total;
                       }, 0);
                       const followupCount = message.parts.reduce((total, part) => {
-                        return part.type === "followups"
-                          ? total + part.followups.length
-                          : total;
+                        return part.type === "followups" ? total + part.followups.length : total;
                       }, 0);
 
                       return (
@@ -314,7 +324,7 @@ export function SessionsPageContent({
                               </div>
                               <div>
                                 <p className="text-sm font-medium text-foreground">
-                                  {message.role === "assistant" ? "助手回复" : "用户提问"}
+                                  {message.role === "assistant" ? "助手回答" : "用户提问"}
                                 </p>
                                 <p className="text-xs text-muted">
                                   {formatTimestamp(message.createdAt)}
@@ -351,8 +361,8 @@ export function SessionsPageContent({
               <CardContent className="space-y-3">
                 <SectionHeading
                   eyebrow="Session"
-                  title="还没有可恢复的会话"
-                  description="当前工作台中没有历史会话，先去问答页发起一轮对话后，这里会出现会话控制台。"
+                  title="还没有可复用的答疑记录"
+                  description="当前工作台里还没有历史会话。先去问答页发起一轮真实答疑后，这里会开始累积可回看、可继续、可沉淀的会话资产。"
                 />
               </CardContent>
             </Card>
@@ -365,8 +375,8 @@ export function SessionsPageContent({
               <CardContent className="space-y-5">
                 <SectionHeading
                   eyebrow="Follow-ups"
-                  title="继续追问入口"
-                  description="这里展示当前会话最近一次助手回答给出的 follow-ups。你可以复制其中一条，再回到问答页继续追问。"
+                  title="下一步处理入口"
+                  description="这里展示当前会话最近一轮回答给出的 follow-ups。你可以直接复制，或者带着它继续生成新的标准回复。"
                 />
 
                 {sessionSummary.followups.length > 0 ? (
@@ -388,7 +398,7 @@ export function SessionsPageContent({
                             <p className="text-sm leading-6 text-foreground">{followup}</p>
                             <p className="mt-1 text-xs text-muted">
                               {activeCopiedFollowup === followup
-                                ? "已复制，可直接去问答页继续使用。"
+                                ? "已复制，可继续去问答页使用。"
                                 : "点击复制这条建议"}
                             </p>
                           </div>
@@ -399,21 +409,19 @@ export function SessionsPageContent({
                   </div>
                 ) : (
                   <div className="rounded-[1.35rem] border border-dashed border-line bg-panel px-4 py-5 text-sm leading-7 text-muted">
-                    最近一次回答还没有 follow-up 建议。当前数据契约已经支持展示，如果后续需要更强的“继续追问”体验，可以由主线程补更明确的 next-step 字段。
+                    最近一轮回答还没有 follow-up 建议。当前会话依然可以作为回看和标准回复整理的基础材料。
                   </div>
                 )}
 
                 <div className="rounded-[1.35rem] border border-line bg-panel-strong p-4">
                   <div className="flex items-center gap-2 text-sm text-muted">
                     <MessageSquareText className="size-4 text-accent-strong" />
-                    恢复方式
+                    使用方式
                   </div>
                   <p className="mt-2 text-sm leading-7 text-foreground">
-                    1. 先复制一条建议。
-                    <br />
-                    2. 打开问答页恢复当前会话。
-                    <br />
-                    3. 直接粘贴并继续追问。
+                    1. 先复制一条继续追问建议。  
+                    2. 打开问答页恢复当前会话。  
+                    3. 直接粘贴继续追问，或改写成标准回复请求。
                   </p>
                   <Button asChild variant="secondary" className="mt-4 w-full justify-between">
                     <Link

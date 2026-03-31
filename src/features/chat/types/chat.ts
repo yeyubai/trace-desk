@@ -1,3 +1,8 @@
+import type {
+  SourceFreshnessStatus,
+  SourceTrustLevel,
+} from "@/features/knowledge/types/knowledge";
+
 export type ModelTier = "fast" | "quality";
 export type ChatFeedbackRating = "thumbs_up" | "thumbs_down";
 
@@ -42,6 +47,15 @@ export type CitationItem = {
   sourceTitle: string;
   citationLabel: string;
   excerpt: string;
+  trustLevel?: SourceTrustLevel;
+  freshnessStatus?: SourceFreshnessStatus;
+};
+
+export type KnowledgeGap = {
+  title: string;
+  query: string;
+  reason: string;
+  suggestedActions: string[];
 };
 
 export type ChatMessageStatus = "streaming" | "toolRunning" | "failed";
@@ -56,6 +70,11 @@ export type ChatMessagePart =
       id: string;
       type: "citations";
       citations: CitationItem[];
+    }
+  | {
+      id: string;
+      type: "knowledge_gap";
+      gap: KnowledgeGap;
     }
   | {
       id: string;
